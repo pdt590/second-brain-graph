@@ -147,10 +147,10 @@ async function getHermesConfig() {
   };
   const target = env.HERMES_API_TARGET
     || findHermesTargetFromLog(path.join(homedir(), '.hermes', 'logs', 'gateway.log'))
-    || `http://${env.API_SERVER_HOST || '127.0.0.1'}:${env.API_SERVER_PORT || '8643'}`;
+    || 'http://127.0.0.1:8643';
   return {
     target,
-    apiKey: env.API_SERVER_KEY || env.HERMES_API_KEY || env.VITE_HERMES_API_KEY || ''
+    apiKey: env.API_SERVER_KEY || ''
   };
 }
 

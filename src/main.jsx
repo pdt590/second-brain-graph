@@ -1257,10 +1257,11 @@ function PasswordDialog({ onClose }) {
 
   const submitPassword = async (event) => {
     event.preventDefault();
-    const form = new FormData(event.currentTarget);
-    const current = String(form.get('current') || '').trim();
-    const next = String(form.get('next') || '').trim();
-    const confirm = String(form.get('confirm') || '').trim();
+    const form = event.currentTarget;
+    const formData = new FormData(form);
+    const current = String(formData.get('current') || '').trim();
+    const next = String(formData.get('next') || '').trim();
+    const confirm = String(formData.get('confirm') || '').trim();
     if (!next || next !== confirm) {
       setMessage('两次输入的新密码不一致。');
       return;
@@ -1277,7 +1278,7 @@ function PasswordDialog({ onClose }) {
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || '密码更新失败。');
       setMessage('密码已更新。');
-      event.currentTarget.reset();
+      form.reset();
     } catch (error) {
       setMessage(error.message || '密码更新失败。');
     } finally {

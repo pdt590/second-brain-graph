@@ -50,13 +50,10 @@ function requestHealth(target, timeoutMs = 700) {
 async function detectHermesTarget(env) {
   if (env.HERMES_API_TARGET) return env.HERMES_API_TARGET;
 
-  const host = env.API_SERVER_HOST || '127.0.0.1';
-  if (env.API_SERVER_PORT) return `http://${host}:${env.API_SERVER_PORT}`;
-
   const logTarget = findHermesTargetFromLog(join(homedir(), '.hermes', 'logs', 'gateway.log'));
   if (logTarget && await requestHealth(logTarget)) return logTarget;
 
-  const candidates = ['8643', '8642'].map((port) => `http://${host}:${port}`);
+  const candidates = ['8643', '8642'].map((port) => `http://127.0.0.1:${port}`);
   for (const candidate of candidates) {
     if (await requestHealth(candidate)) return candidate;
   }
@@ -100,8 +97,8 @@ const hermesEnv = {
   ...process.env
 };
 
-const hermesResolvedApiKey = hermesEnv.API_SERVER_KEY || hermesEnv.HERMES_API_KEY || hermesEnv.VITE_HERMES_API_KEY || '';
-const hermesBaseUrl = hermesEnv.VITE_HERMES_API_BASE_URL || '/api/hermes/v1';
+const hermesResolvedApiKey = hermesEnv.API_SERVER_KEY || '';
+const hermesBaseUrl = '/api/hermes/v1';
 
 export default defineConfig(async ({ command }) => {
   const hermesTarget = await detectHermesTarget(hermesEnv);

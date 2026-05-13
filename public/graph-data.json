@@ -1,0 +1,424 @@
+{
+  "generatedAt": "2026-05-13T06:16:26.568Z",
+  "wikiDir": "/Users/huzhiwei/Library/Mobile Documents/iCloud~md~obsidian/Documents/work",
+  "nodes": [
+    {
+      "id": "claude",
+      "name": "CLAUDE.md",
+      "category": "root",
+      "summary": "CLAUDE.md This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository. Overview 这是一个由 hermes agent 维护的 Obsidian Wiki 金库，基于 思想构建。 llm wiki 核心思想 ：不同于传统 RAG（上传文档、查询时检索片段），llm wiki 让",
+      "sourcePath": "CLAUDE.md",
+      "contentUrl": "/api/wiki/content?id=claude"
+    },
+    {
+      "id": "schema",
+      "name": "Wiki Schema",
+      "category": "root",
+      "summary": "Wiki Schema Domain AI应用软件开发 — AI应用产品的设计、开发、部署与优化，涵盖LLM应用、RAG系统、AI Agent、模型集成、API开发等。 Conventions 文件名：小写、连字符、无空格（如 transformer architecture.md ） 每个 wiki 页面以 YAML frontmatter 开头（见下方） 使用 [[wikilinks]] 建立页面间链接（每个页面至少 2 个出站链接",
+      "sourcePath": "SCHEMA.md",
+      "contentUrl": "/api/wiki/content?id=schema"
+    },
+    {
+      "id": "agent",
+      "name": "Agent",
+      "category": "root",
+      "summary": "此节点来自 llm-wiki，暂无摘要。",
+      "sourcePath": "agent.md",
+      "contentUrl": "/api/wiki/content?id=agent"
+    },
+    {
+      "id": "architecture/system-architecture-unified-platform",
+      "name": "System Architecture Design - Unified Platform Narrative",
+      "category": "architecture",
+      "summary": "Cyberwing + Hermes Agent 医疗垂域本地化 AI 平台 — 架构设计 1. 文档定位 本文档处于 L2 级技术架构设计层 ，目标是在平台级草图基础上，展开： 系统分层 关键模块 核心数据流 接口边界 安全与合规控制 统一主叙事如下： Cyberwing + Hermes Agent = 医疗垂域本地化 AI 平台 骨科术后康复、糖尿病足、生命体征/血氧监测 = 首批落地 disease packages / use",
+      "sourcePath": "architecture/system-architecture-unified-platform.md",
+      "contentUrl": "/api/wiki/content?id=architecture%2Fsystem-architecture-unified-platform"
+    },
+    {
+      "id": "architecture/system-architecture",
+      "name": "System Architecture Design",
+      "category": "architecture",
+      "summary": "骨科术后康复 + 糖尿病足AI管理系统 — 架构设计文档 1. 系统概述 1.1 产品定位 基于 Cyberwing 机 + Hermes Agent 构建的本地化医疗AI随访与管理平台，覆盖骨科术后康复随访 和 糖尿病足一体化管理两大场景，通过\"规则引擎 + LLM推理\"双引擎架构，实现患者居家康复的智能化、标准化、全流程闭环管理。 1.2 核心场景 | 场景 | 目标人群 | 核心能力 | | | | | | 骨科术后康复随访 | ",
+      "sourcePath": "architecture/system-architecture.md",
+      "contentUrl": "/api/wiki/content?id=architecture%2Fsystem-architecture"
+    },
+    {
+      "id": "concepts/medwing",
+      "name": "MedWing",
+      "category": "concepts",
+      "summary": "MedWing — AI 健康监护系统 概述 MedWing 是基于 Cyberwing + Hermes Agent 的 AI 健康监护系统，以糖尿病管理为切入点，服务慢性病患者、医生和护士。 Cyberwing 是医院部署的智能设备，同时具备： 1. 本地 AI 处理能力（图片/文档/音视频） 2. 本地安装 Hermes Agent（多用户、多 Profile） 核心价值：每位用户通过手机 + 蓝牙设备连接 Cyberwing，拥",
+      "sourcePath": "concepts/medwing.md",
+      "contentUrl": "/api/wiki/content?id=concepts%2Fmedwing"
+    },
+    {
+      "id": "entities/cyberwing",
+      "name": "Cyberwing",
+      "category": "entities",
+      "summary": "Cyberwing 命名说明 Cyberwing — 注册商标名 PCA — Personal Cloud Assistant（产品定位） C1 — 项目代号 概述 Cyberwing（赛博机）是一款 面向个人、家庭、团队的 AI 私有云助理（PCA） ，集大容量存储、本地 AI 模型、个性化服务于一体。品牌定位： LCFC IDSG AICD ，强调 Accessible、CUSTOMIZABLE 。 产品规格（标准版） | 配置 |",
+      "sourcePath": "entities/cyberwing.md",
+      "contentUrl": "/api/wiki/content?id=entities%2Fcyberwing"
+    },
+    {
+      "id": "entities/hermes-agent",
+      "name": "Hermes Agent",
+      "category": "entities",
+      "summary": "Hermes Agent ☤ 概述 Hermes Agent 是由 开发的开源 AI Agent 项目，采用 MIT 许可证。 核心定位： The self improving AI agent — 内置学习循环，能够从经验中创建 skill、使用中自我改进、持久化知识。 关键数据 | 指标 | 数值 | | | | | GitHub Stars | 119k | | Forks | 17.6k | | Commits | 6,076 ",
+      "sourcePath": "entities/hermes-agent.md",
+      "contentUrl": "/api/wiki/content?id=entities%2Fhermes-agent"
+    },
+    {
+      "id": "index",
+      "name": "Wiki Index",
+      "category": "root",
+      "summary": "Wiki Index Content catalog. Every wiki page listed under its type with a one line summary. Read this first to find relevant pages for any query. Last updated: 2026 04 27 | Total pages: 3 Entities <! Alphabetical within s",
+      "sourcePath": "index.md",
+      "contentUrl": "/api/wiki/content?id=index"
+    },
+    {
+      "id": "log",
+      "name": "Wiki Log",
+      "category": "root",
+      "summary": "Wiki Log Chronological record of all wiki actions. Append only. Format: [YYYY MM DD] action | subject Actions: ingest, update, query, lint, create, archive, delete When this file exceeds 500 entries, rotate: rename to lo",
+      "sourcePath": "log.md",
+      "contentUrl": "/api/wiki/content?id=log"
+    },
+    {
+      "id": "mrd/product-mrd-unified-platform",
+      "name": "Product MRD - Unified Platform Narrative",
+      "category": "mrd",
+      "summary": "Cyberwing + Hermes Agent 医疗垂域本地化 AI 平台 — MRD 1. 文档概述 1.1 目的 本文档从市场与产品需求层定义 Cyberwing + Hermes Agent 医疗垂域本地化 AI 平台 的产品方向、目标用户、落地场景与需求边界。 文档重点不是单一病种系统，而是明确： 平台是什么 ：一套部署在医院内网或本地场景中的医疗 AI 平台 为什么现在做 ：医疗机构对本地化、安全合规、可解释 AI 的需求正",
+      "sourcePath": "mrd/product-mrd-unified-platform.md",
+      "contentUrl": "/api/wiki/content?id=mrd%2Fproduct-mrd-unified-platform"
+    },
+    {
+      "id": "mrd/product-mrd",
+      "name": "Product MRD",
+      "category": "mrd",
+      "summary": "骨科术后康复 + 糖尿病足AI管理系统 — MRD 1. 文档概述 1.1 目的 本文档定义 骨科术后康复AI随访系统 和 糖尿病足一体化AI管理系统 的市场需求，明确产品定位、目标用户、功能需求、非功能需求及技术约束，为产品设计、开发、测试、验收提供完整依据。 1.2 范围 本文档覆盖两大场景的完整需求： 骨科术后患者康复AI随访系统（六类手术术后随访管理） 糖尿病足一体化AI管理系统（筛查、风险管理、血糖管理、创面护理） 两个场景共",
+      "sourcePath": "mrd/product-mrd.md",
+      "contentUrl": "/api/wiki/content?id=mrd%2Fproduct-mrd"
+    },
+    {
+      "id": "notes/claude-md-governance-insight-2026-05-13",
+      "name": "CLAUDE.md 治理规则与 llm-wiki 工作流洞察",
+      "category": "notes",
+      "summary": "CLAUDE.md 治理规则与 llm wiki 工作流洞察 背景 当前节点 [[CLAUDE]] 是该 Obsidian Wiki 金库的根级治理说明文件，用来约束 hermes agent 在此仓库中的知识组织与维护方式。它明确指出，这个金库不是传统的检索式知识库，而是一个遵循 [[concepts/medwing]] 等页面持续演化思路的 llm wiki：新信息进入后，系统需要增量吸收、重写、链接与校正，而不是仅在查询时临时拼接",
+      "sourcePath": "notes/claude-md-governance-insight-2026-05-13.md",
+      "contentUrl": "/api/wiki/content?id=notes%2Fclaude-md-governance-insight-2026-05-13"
+    },
+    {
+      "id": "prd/product-prd-unified-platform",
+      "name": "Product PRD - Unified Platform",
+      "category": "prd",
+      "summary": "Cyberwing + Hermes Agent 医疗垂域本地化 AI 平台 — PRD 1. 产品概述 1.1 产品背景 当前医疗机构在引入 AI 时普遍面临五大问题： | 问题 | 现状 | 影响 | | | | | | 数据合规压力大 | 医疗数据涉及隐私，很多机构无法接受直接上公有云 | AI 项目难以在院内落地 | | 系统割裂 | HIS、EMR、随访、IoT 设备与影像/文档系统各自独立 | 数据无法形成患者连续画像 | ",
+      "sourcePath": "prd/product-prd-unified-platform.md",
+      "contentUrl": "/api/wiki/content?id=prd%2Fproduct-prd-unified-platform"
+    },
+    {
+      "id": "raw/articles/hermes-agent-readme",
+      "name": "Hermes Agent ☤",
+      "category": "raw",
+      "summary": "<p align=\"center\" <img src=\"assets/banner.png\" alt=\"Hermes Agent\" width=\"100%\" </p Hermes Agent ☤ <p align=\"center\" <a href=\"https://hermes agent.nousresearch.com/docs/\" <img src=\"https://img.shields.io/badge/Docs hermes",
+      "sourcePath": "raw/articles/hermes-agent-readme.md",
+      "contentUrl": "/api/wiki/content?id=raw%2Farticles%2Fhermes-agent-readme"
+    },
+    {
+      "id": "raw/articles/medwing-product-concept",
+      "name": "MedWing 产品概念",
+      "category": "raw",
+      "summary": "MedWing 产品概念 产品定位 MedWing — 基于 Cyberwing + Hermes Agent 构建的医疗助手平台，服务于慢性病患者（以糖尿病为切入点）、医生和护士。 核心价值：让每位慢性病患者拥有 7×24 小时在线的 AI 健康助理，记录健康数据、解读检查报告、预警异常、连接医护。 目标用户 C端：慢性病患者（以糖尿病为首发场景） 日常健康咨询（饮食、运动、用药） 血糖数据自主记录与分析 检查报告拍照解读（AI 初筛",
+      "sourcePath": "raw/articles/medwing-product-concept.md",
+      "contentUrl": "/api/wiki/content?id=raw%2Farticles%2Fmedwing-product-concept"
+    },
+    {
+      "id": "raw/articles/medwing-product-v3",
+      "name": "MedWing 产品概念 V3",
+      "category": "raw",
+      "summary": "MedWing 产品概念 V3 产品定位 MedWing — 基于 Cyberwing + Hermes Agent 的 AI 健康监护系统，以糖尿病管理为切入点，服务慢性病患者、医生和护士。 核心价值：每位用户通过自己的手机 + 扩展设备（蓝牙血糖仪等）接入 Hermes Agent，拥有独立的 Profile，实现 7×24 AI 健康监护 ，异常实时通知医护。 核心原则 设备层 ：用户手机 + 蓝牙扩展设备（血糖仪等），仅做数据采",
+      "sourcePath": "raw/articles/medwing-product-v3.md",
+      "contentUrl": "/api/wiki/content?id=raw%2Farticles%2Fmedwing-product-v3"
+    },
+    {
+      "id": "raw/articles/medwing-product-v4",
+      "name": "MedWing 产品概念 V4",
+      "category": "raw",
+      "summary": "MedWing 产品概念 V4 产品定位 MedWing — 基于 Cyberwing + Hermes Agent 的 AI 健康监护系统，以糖尿病管理为切入点，服务慢性病患者、医生和护士。 核心价值：每位用户通过手机 + 蓝牙设备接入 Hermes Agent（云端编排）+ Cyberwing（本地 AI 处理），拥有独立 Profile，实现 7×24 AI 健康监护 ，异常实时通知医护。 核心原则 用户手机 ：主设备 + 小程序",
+      "sourcePath": "raw/articles/medwing-product-v4.md",
+      "contentUrl": "/api/wiki/content?id=raw%2Farticles%2Fmedwing-product-v4"
+    },
+    {
+      "id": "raw/articles/medwing-product-v5",
+      "name": "MedWing 产品概念 V5",
+      "category": "raw",
+      "summary": "MedWing 产品概念 V5 产品定位 MedWing — 基于 Cyberwing 主机 + Hermes Agent 的 AI 远程医疗健康监控系统，以 血氧监测 为切入点，服务慢性病患者、医生和护士。 Cyberwing 是部署在医院/机构本地的智能主机，同时具备： 1. 本地 AI 处理能力（图片/文档/音视频） 2. 本地安装 Hermes Agent（多用户、多 Profile、长期记忆） 核心价值：每位病患通过手机 Ap",
+      "sourcePath": "raw/articles/medwing-product-v5.md",
+      "contentUrl": "/api/wiki/content?id=raw%2Farticles%2Fmedwing-product-v5"
+    },
+    {
+      "id": "raw/transcripts/cyberwing-features-roadmap-2026",
+      "name": "Cyberwing 现有功能",
+      "category": "raw",
+      "summary": "Cyberwing 现有功能 | 类别 | 功能 | | | | | 手机 App | AI 搜图、AI 图搜图、AI 图生视频、AI 搜文档、AI 知识库问答、录音纪要、AI 闲聊、天气、邮件、日程、交通路线、高铁查询等 | | 小宝 | 唤醒、关闭、闲聊、天气查询、日程管理、邮件发送、本地音乐扫描、播放 | | PC 端 | 文件管理，按名称查询 | Cyberwing 功能规划 4/30 AI 搜索音频、视频 小宝语音控制图片、视",
+      "sourcePath": "raw/transcripts/cyberwing-features-roadmap-2026.md",
+      "contentUrl": "/api/wiki/content?id=raw%2Ftranscripts%2Fcyberwing-features-roadmap-2026"
+    },
+    {
+      "id": "raw/transcripts/cyberwing-intro",
+      "name": "Cyberwing简介 PPT",
+      "category": "raw",
+      "summary": "Cyberwing 简介 PPT 内容 Slide 2: 产品定位 Cyberwing 赛博机 — Personal Cloud Assistant 首款面向个人、家庭、团队的AI私有云助理 Slide 4: 产品SPEC（标准版） | 配置 | 规格 | | | | | 处理器 | CPU Intel Core Ultra 5 225H（Arrow Lake H），GPU Intel Arc 130T 7 Xe 核心，NPU Inte",
+      "sourcePath": "raw/transcripts/cyberwing-intro.md",
+      "contentUrl": "/api/wiki/content?id=raw%2Ftranscripts%2Fcyberwing-intro"
+    },
+    {
+      "id": "use-cases/system-use-cases-unified-platform",
+      "name": "System Use Cases - Unified Platform Narrative",
+      "category": "use-cases",
+      "summary": "Cyberwing + Hermes Agent 医疗垂域本地化 AI 平台 — Use Cases 1. 文档目标 本文档处于 业务流程层 ，用于把平台型 MRD 的产品需求映射为实际系统行为。 这里描述的不是“一个孤立病种系统”的 use case，而是： 平台级共性 use cases 首批 disease packages 的场景 use cases 跨场景联动 use cases 统一主叙事为： Cyberwing + Her",
+      "sourcePath": "use-cases/system-use-cases-unified-platform.md",
+      "contentUrl": "/api/wiki/content?id=use-cases%2Fsystem-use-cases-unified-platform"
+    },
+    {
+      "id": "use-cases/system-use-cases",
+      "name": "System Use Cases",
+      "category": "use-cases",
+      "summary": "骨科术后康复 + 糖尿病足AI管理系统 — Use Case 文档 1. Actor 定义 | Actor | 描述 | 使用端 | | | | | | 患者 | 骨科术后康复患者 / 糖尿病足患者 / 老年糖尿病患者 | 微信小程序 | | 随访护士 | 负责日常随访处置、患者联系的医护人员 | 小程序 + PC管理系统 | | 临床医生 | 负责医嘱下达、药物调整确认、紧急处置的医生 | 小程序 + PC管理系统 | | 科室管理者",
+      "sourcePath": "use-cases/system-use-cases.md",
+      "contentUrl": "/api/wiki/content?id=use-cases%2Fsystem-use-cases"
+    },
+    {
+      "id": "rag",
+      "name": "Rag",
+      "category": "references",
+      "summary": "此概念被 llm-wiki 中的页面引用，但尚未创建独立文档。",
+      "sourcePath": null,
+      "contentUrl": null
+    },
+    {
+      "id": "multimodal",
+      "name": "Multimodal",
+      "category": "references",
+      "summary": "此概念被 llm-wiki 中的页面引用，但尚未创建独立文档。",
+      "sourcePath": null,
+      "contentUrl": null
+    },
+    {
+      "id": "mcp",
+      "name": "Mcp",
+      "category": "references",
+      "summary": "此概念被 llm-wiki 中的页面引用，但尚未创建独立文档。",
+      "sourcePath": null,
+      "contentUrl": null
+    },
+    {
+      "id": "honcho",
+      "name": "Honcho",
+      "category": "references",
+      "summary": "此概念被 llm-wiki 中的页面引用，但尚未创建独立文档。",
+      "sourcePath": null,
+      "contentUrl": null
+    },
+    {
+      "id": "open-source",
+      "name": "Open Source",
+      "category": "references",
+      "summary": "此概念被 llm-wiki 中的页面引用，但尚未创建独立文档。",
+      "sourcePath": null,
+      "contentUrl": null
+    },
+    {
+      "id": "nous-research",
+      "name": "Nous Research",
+      "category": "references",
+      "summary": "此概念被 llm-wiki 中的页面引用，但尚未创建独立文档。",
+      "sourcePath": null,
+      "contentUrl": null
+    },
+    {
+      "id": "raw/articles/骨科术后患者康复ai随访系统需求规格说明书",
+      "name": "骨科术后患者康复ai随访系统需求规格说明书",
+      "category": "references",
+      "summary": "此概念被 llm-wiki 中的页面引用，但尚未创建独立文档。",
+      "sourcePath": null,
+      "contentUrl": null
+    },
+    {
+      "id": "raw/articles/糖尿病足一体化ai管理系统临床规则库",
+      "name": "糖尿病足一体化ai管理系统临床规则库",
+      "category": "references",
+      "summary": "此概念被 llm-wiki 中的页面引用，但尚未创建独立文档。",
+      "sourcePath": null,
+      "contentUrl": null
+    }
+  ],
+  "links": [
+    {
+      "source": "architecture/system-architecture-unified-platform",
+      "target": "mrd/product-mrd-unified-platform"
+    },
+    {
+      "source": "architecture/system-architecture-unified-platform",
+      "target": "use-cases/system-use-cases-unified-platform"
+    },
+    {
+      "source": "architecture/system-architecture-unified-platform",
+      "target": "architecture/system-architecture"
+    },
+    {
+      "source": "concepts/medwing",
+      "target": "raw/articles/medwing-product-v5"
+    },
+    {
+      "source": "concepts/medwing",
+      "target": "entities/cyberwing"
+    },
+    {
+      "source": "concepts/medwing",
+      "target": "entities/hermes-agent"
+    },
+    {
+      "source": "concepts/medwing",
+      "target": "agent"
+    },
+    {
+      "source": "concepts/medwing",
+      "target": "rag"
+    },
+    {
+      "source": "entities/cyberwing",
+      "target": "raw/transcripts/cyberwing-features-roadmap-2026"
+    },
+    {
+      "source": "entities/cyberwing",
+      "target": "raw/transcripts/cyberwing-intro"
+    },
+    {
+      "source": "entities/cyberwing",
+      "target": "agent"
+    },
+    {
+      "source": "entities/cyberwing",
+      "target": "rag"
+    },
+    {
+      "source": "entities/cyberwing",
+      "target": "multimodal"
+    },
+    {
+      "source": "entities/cyberwing",
+      "target": "mcp"
+    },
+    {
+      "source": "entities/hermes-agent",
+      "target": "raw/articles/hermes-agent-readme"
+    },
+    {
+      "source": "entities/hermes-agent",
+      "target": "honcho"
+    },
+    {
+      "source": "entities/hermes-agent",
+      "target": "agent"
+    },
+    {
+      "source": "entities/hermes-agent",
+      "target": "open-source"
+    },
+    {
+      "source": "entities/hermes-agent",
+      "target": "nous-research"
+    },
+    {
+      "source": "index",
+      "target": "entities/cyberwing"
+    },
+    {
+      "source": "index",
+      "target": "entities/hermes-agent"
+    },
+    {
+      "source": "index",
+      "target": "concepts/medwing"
+    },
+    {
+      "source": "index",
+      "target": "notes/claude-md-governance-insight-2026-05-13"
+    },
+    {
+      "source": "mrd/product-mrd-unified-platform",
+      "target": "mrd/product-mrd"
+    },
+    {
+      "source": "mrd/product-mrd-unified-platform",
+      "target": "raw/articles/medwing-product-concept"
+    },
+    {
+      "source": "mrd/product-mrd-unified-platform",
+      "target": "entities/cyberwing"
+    },
+    {
+      "source": "mrd/product-mrd-unified-platform",
+      "target": "entities/hermes-agent"
+    },
+    {
+      "source": "mrd/product-mrd",
+      "target": "raw/articles/骨科术后患者康复ai随访系统需求规格说明书"
+    },
+    {
+      "source": "mrd/product-mrd",
+      "target": "raw/articles/糖尿病足一体化ai管理系统临床规则库"
+    },
+    {
+      "source": "notes/claude-md-governance-insight-2026-05-13",
+      "target": "claude"
+    },
+    {
+      "source": "notes/claude-md-governance-insight-2026-05-13",
+      "target": "concepts/medwing"
+    },
+    {
+      "source": "notes/claude-md-governance-insight-2026-05-13",
+      "target": "entities/hermes-agent"
+    },
+    {
+      "source": "notes/claude-md-governance-insight-2026-05-13",
+      "target": "schema"
+    },
+    {
+      "source": "notes/claude-md-governance-insight-2026-05-13",
+      "target": "index"
+    },
+    {
+      "source": "notes/claude-md-governance-insight-2026-05-13",
+      "target": "log"
+    },
+    {
+      "source": "prd/product-prd-unified-platform",
+      "target": "mrd/product-mrd-unified-platform"
+    },
+    {
+      "source": "prd/product-prd-unified-platform",
+      "target": "architecture/system-architecture-unified-platform"
+    },
+    {
+      "source": "prd/product-prd-unified-platform",
+      "target": "use-cases/system-use-cases-unified-platform"
+    },
+    {
+      "source": "use-cases/system-use-cases-unified-platform",
+      "target": "mrd/product-mrd-unified-platform"
+    },
+    {
+      "source": "use-cases/system-use-cases-unified-platform",
+      "target": "architecture/system-architecture-unified-platform"
+    },
+    {
+      "source": "use-cases/system-use-cases",
+      "target": "mrd/product-mrd"
+    },
+    {
+      "source": "use-cases/system-use-cases",
+      "target": "architecture/system-architecture"
+    }
+  ]
+}

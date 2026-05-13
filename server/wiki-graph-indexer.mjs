@@ -10,11 +10,7 @@ const IGNORED_DIRS = new Set(['.git', '.obsidian', 'node_modules', '.trash']);
 export function resolveWikiDir(env = process.env) {
   const candidates = [
     env.HERMES_WIKI_DIR,
-    env.HERMES_LLM_WIKI_DIR,
-    env.LLM_WIKI_DIR,
-    env.SECOND_BRAIN_WIKI_DIR,
     path.join(homedir(), '.hermes', 'llm-wiki'),
-    path.join(homedir(), '.hermes', 'wiki'),
     path.join(process.cwd(), 'wiki')
   ].filter(Boolean);
 
