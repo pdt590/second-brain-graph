@@ -1324,3 +1324,71 @@ button {
     height: 38px;
   }
 }
+
+/* Chat history bar */
+.chat-history-bar {
+  padding-bottom: 2px;
+}
+
+.history-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 32px;
+  padding: 0 12px;
+  color: var(--text-muted);
+  background: transparent;
+  border: 1px solid var(--panel-border);
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  transition: background .15s ease, color .15s ease;
+}
+
+.history-toggle:hover {
+  color: var(--text-main);
+  background: var(--surface);
+}
+
+.history-count {
+  color: color-mix(in srgb, var(--node-color), var(--text-main) 12%);
+}
+
+.chat-history-panel {
+  max-height: 200px;
+  overflow: auto;
+  padding: 10px 12px;
+  margin-bottom: 6px;
+  color: var(--text-soft);
+  background: var(--surface);
+  border: 1px solid var(--panel-border);
+  border-radius: 8px;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.history-conversation {
+  padding: 8px 0;
+  border-bottom: 1px solid var(--panel-border);
+}
+
+.history-conversation:last-child {
+  border-bottom: none;
+}
+
+.history-user,
+.history-ai {
+  margin: 2px 0;
+}
+
+.history-user strong,
+.history-ai strong {
+  color: var(--text-muted);
+  font-size: 11px;
+  text-transform: uppercase;
+}
+
+.history-user span,
+.history-ai span {
+  color: var(--text-soft);
+}

@@ -28,6 +28,7 @@ const server = http.createServer(async (request, response) => {
     if (url.pathname.startsWith('/api/') && !auth.getSessionUser(request)) return sendJson(response, { error: 'Unauthorized' }, 401);
     if (url.pathname === '/api/graph') return sendJson(response, await indexer.getGraph());
     if (url.pathname === '/api/chat/history') return handleChatHistory(request, response, url);
+    if (url.pathname === '/api/chat/summary') return handleChatSummary(request, response, url);
     if (url.pathname === '/api/wiki/content') return sendWikiContent(url, response);
     if (url.pathname === '/api/wiki/events') return sendWikiEvents(request, response);
     if (url.pathname.startsWith('/api/hermes/')) return proxyHermes(request, response, url);
@@ -69,6 +70,41 @@ async function handleChatHistory(request, response, url) {
   return sendJson(response, { error: 'Method not allowed' }, 405);
 }
 
+async function handleChatSummary(request, response, url) {
+  if (request.method !== 'GET') return sendJson(response, { error: 'Method not allowed' }, 405);
+  const nodeId = url.searchParams.get('nodeId');
+  if (!nodeId) return sendJson(response, { error: 'Missing nodeId' }, 400);
+
+  const messages = await readChatHistory(nodeId);
+  if (!messages.length) return sendJson(response, { nodeId, totalMessages: 0, conversations: [] });
+
+  // Group into user-assistant pairs, extract summary of recent conversations
+  const conversations = [];
+  for (let i = 0; i < messages.length; i++) {
+    if (messages[i].role === 'user') {
+      const userQuestion = messages[i].text;
+      let aiAnswer = '';
+      let pairCount = 1;
+      if (i + 1 < messages.length && messages[i + 1].role === 'agent') {
+        aiAnswer = messages[i + 1].text;
+        pairCount = 2;
+      }
+      conversations.push({
+        userQuestion: userQuestion.slice(0, 120),
+        aiSummary: aiAnswer.slice(0, 150),
+        messageCount: pairCount
+      });
+    }
+  }
+
+  // Return the last 5 conversation summaries
+  return sendJson(response, {
+    nodeId,
+    totalMessages: messages.length,
+    conversations: conversations.slice(-5)
+  });
+}
+
 async function readChatHistory(nodeId) {
   const filePath = chatHistoryPath(nodeId);
   if (!existsSync(filePath)) return [];
@@ -88,7 +124,6 @@ async function writeChatHistory(nodeId, messages) {
     updatedAt: new Date().toISOString(),
     messages: messages
       .filter((message) => ['user', 'agent'].includes(message.role) && typeof message.text === 'string')
-      .slice(-80)
   }, null, 2));
 }
 

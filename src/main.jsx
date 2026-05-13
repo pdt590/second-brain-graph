@@ -568,6 +568,7 @@ function App() {
   const [chatNode, setChatNode] = useState(null);
   const [messagesByNode, setMessagesByNode] = useState({});
   const [loadedChatNodes, setLoadedChatNodes] = useState(new Set());
+  const [chatSummaries, setChatSummaries] = useState({});
   const [isSending, setIsSending] = useState(false);
   const [isGeneratingInsight, setIsGeneratingInsight] = useState(false);
   const [chatError, setChatError] = useState('');
@@ -609,6 +610,18 @@ function App() {
             : [{ role: 'agent', text: '可以围绕这个节点和它的邻近知识继续追问。' }]
         }));
         setLoadedChatNodes((current) => new Set(current).add(chatNode.id));
+      })
+      .catch(() => {});
+
+    // Load conversation summary
+    fetch(`/api/chat/summary?nodeId=${encodeURIComponent(chatNode.id)}`, {
+      cache: 'no-store',
+      credentials: 'same-origin'
+    })
+      .then((response) => response.ok ? response.json() : { conversations: [], totalMessages: 0 })
+      .then((data) => {
+        if (cancelled) return;
+        setChatSummaries((current) => ({ ...current, [chatNode.id]: data }));
       })
       .catch(() => {});
 
@@ -957,6 +970,11 @@ function App() {
     const assistantMessage = { role: 'agent', text: '' };
     setNodeMessages(targetNode.id, (current) => [...current, { role: 'user', text }, assistantMessage]);
 
+    const summary = chatSummaries[targetNode.id];
+    const historyContext = summary?.conversations?.length
+      ? `之前的对话概要：\n${summary.conversations.map((c, i) => `- 用户问过：${c.userQuestion}；AI 回答了：${c.aiSummary}`).join('\n')}`
+      : '';
+
     try {
       const recentMessages = getNodeMessages(targetNode.id).slice(-6).map((message) => ({
         role: message.role === 'agent' ? 'assistant' : 'user',
@@ -966,7 +984,11 @@ function App() {
       await streamHermesAnswer({
         targetNode,
         userText: `用户问题：${text}`,
-        systemPrompt: '你是 Second Brain 知识图谱中的 Hermes Agent。请基于当前节点、原文片段和邻近节点回答用户问题。回答要清晰、可读、偏知识沉淀，支持 Markdown。',
+        systemPrompt: [
+          '你是 Second Brain 知识图谱中的 Hermes Agent。请基于当前节点、原文片段和邻近节点回答用户问题。回答要清晰、可读、偏知识沉淀，支持 Markdown。',
+          historyContext,
+          '如果用户的问题与之前的讨论相关，请在此基础上继续深入，避免重复已给出的信息。'
+        ].filter(Boolean).join('\n\n'),
         recentMessages,
         onChunk: (_chunk, fullText) => {
           setNodeMessages(targetNode.id, (current) => current.map((message, index) => (
@@ -1149,6 +1171,7 @@ function App() {
         <ChatModal
           node={chatNode}
           messages={chatMessages}
+          summary={chatSummaries[chatNode.id]}
           isSending={isSending}
           isGeneratingInsight={isGeneratingInsight}
           error={chatError}
@@ -1408,9 +1431,11 @@ function NodePanel({ node, neighbors, isFull, onClose, onCloseFull, onFull, onFo
   );
 }
 
-function ChatModal({ node, messages, isSending, isGeneratingInsight, error, onClose, onSend, onGenerateInsight }) {
+function ChatModal({ node, messages, summary, isSending, isGeneratingInsight, error, onClose, onSend, onGenerateInsight }) {
   const [isMaximized, setIsMaximized] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
   const busy = isSending || isGeneratingInsight;
+  const hasHistory = summary?.conversations?.length;
 
   return (
     <div className="chat-modal-backdrop" style={{ '--node-color': getCategoryMeta(node.category).color }}>
@@ -1429,6 +1454,36 @@ function ChatModal({ node, messages, isSending, isGeneratingInsight, error, onCl
             </button>
           </div>
         </div>
+
+        {hasHistory && (
+          <div className="chat-history-bar">
+            <button className="history-toggle" onClick={() => setShowHistory((v) => !v)}>
+              <MessageCircle size={14} />
+              {summary.totalMessages > 0 && <span className="history-count">{summary.totalMessages} 条历史消息，{summary.conversations.length} 轮对话</span>}
+              {!summary.totalMessages && <span>有历史对话</span>}
+            </button>
+          </div>
+        )}
+
+        {showHistory && hasHistory && (
+          <div className="chat-history-panel">
+            {summary.conversations.map((conv, i) => (
+              <div key={i} className="history-conversation">
+                <div className="history-user">
+                  <strong>用户：</strong>
+                  <span>{conv.userQuestion}</span>
+                </div>
+                {conv.aiSummary && (
+                  <div className="history-ai">
+                    <strong>AI：</strong>
+                    <span>{conv.aiSummary}</span>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+
         <div className="messages">
           {(isMaximized ? messages : messages.slice(-4)).map((message, index) => (
             <div key={`${message.role}-${index}`} className={`message ${message.role}`}>
