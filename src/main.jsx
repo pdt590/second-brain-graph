@@ -4,6 +4,7 @@ import ForceGraph from 'force-graph';
 import {
   ArrowUpRight,
   Bot,
+  BookUp2,
   BrainCircuit,
   ChevronRight,
   CircleDot,
@@ -1010,21 +1011,20 @@ function App() {
     if (isGeneratingInsight || isSending) return;
     setIsGeneratingInsight(true);
     setChatError('');
-    const nodeMessages = getNodeMessages(targetNode.id);
-
-    const transcript = nodeMessages.map((message) => (
-      `${message.role === 'agent' ? 'Hermes' : '用户'}：${message.text}`
-    )).join('\n\n');
 
     setNodeMessages(targetNode.id, (current) => [
       ...current,
-      { role: 'user', text: '请将这一批对话沉淀为新的 llm-wiki 洞察文件。' },
-      { role: 'agent', text: '' }
+      { role: 'system', text: '正在将本次对话提炼为 Wiki 洞察文件，写入 llm-wiki 知识库...' }
     ]);
 
     try {
-      const recentMessages = nodeMessages.slice(-10).map((message) => ({
-        role: message.role === 'agent' ? 'assistant' : 'user',
+      const nodeMessages = getNodeMessages(targetNode.id);
+      const transcript = nodeMessages.map((message) => (
+        message.role === 'agent' ? `Hermes：${message.text}` : message.role === 'user' ? `用户：${message.text}` : `[系统] ${message.text}`
+      )).join('\n\n');
+
+      const recentMessages = nodeMessages.slice(-12).map((message) => ({
+        role: message.role === 'agent' ? 'assistant' : message.role === 'user' ? 'user' : 'system',
         content: message.text
       }));
 
@@ -1493,9 +1493,9 @@ function ChatModal({ node, messages, summary, isSending, isGeneratingInsight, er
         </div>
         {error && <div className="chat-error">{error}</div>}
         <div className="chat-toolbar">
-          <button type="button" onClick={() => onGenerateInsight(node)} disabled={busy}>
-            {isGeneratingInsight ? <Command size={15} /> : <FileText size={15} />}
-            生成洞察文件
+          <button type="button" title="将当前对话提炼为 Markdown 洞察文件，写入 llm-wiki 知识库。AI 会分析对话内容并生成结构化文档。" onClick={() => onGenerateInsight(node)} disabled={busy}>
+            {isGeneratingInsight ? <Command size={15} /> : <BookUp2 size={15} />}
+            保存到 Wiki
           </button>
         </div>
         <form onSubmit={(event) => onSend(event, node)} className="chat-form">

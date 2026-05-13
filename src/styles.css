@@ -1110,6 +1110,12 @@ button {
   background: var(--message-user);
 }
 
+.message.system {
+  color: var(--text-muted);
+  background: var(--surface);
+  font-style: italic;
+}
+
 .chat-error {
   padding: 10px 12px;
   color: #ffd8d8;
