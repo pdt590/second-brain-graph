@@ -1245,8 +1245,13 @@ button {
   }
 
   .brand {
-    width: calc(100% - 198px);
+    width: auto;
     min-width: 0;
+    padding: 6px;
+  }
+
+  .brand > span:not(.brand-mark) {
+    display: none;
   }
 
   .search-box {
