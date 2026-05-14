@@ -674,10 +674,16 @@ button {
 }
 
 .panel-head {
+  position: relative;
   display: flex;
   justify-content: space-between;
   gap: 18px;
   align-items: flex-start;
+}
+
+.panel-head > div:first-child {
+  flex: 1 1 auto;
+  min-width: 0;
 }
 
 .panel-actions {
@@ -732,9 +738,27 @@ button {
 }
 
 .node-panel h1 {
-  margin: 4px 0 0;
-  font-size: clamp(34px, 4.8vw, 58px);
-  line-height: .86;
+  max-width: 100%;
+  margin: 6px 0 0;
+  font-family: 'Rajdhani', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  font-size: clamp(26px, 3vw, 38px);
+  font-weight: 800;
+  line-height: 1.05;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  text-wrap: balance;
+}
+
+.node-panel:not(.is-full) h1 {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 4;
+}
+
+.node-panel.is-full h1 {
+  font-size: clamp(38px, 4vw, 64px);
+  line-height: 1.02;
 }
 
 .icon-button {
@@ -1325,7 +1349,12 @@ button {
   }
 
   .node-panel h1 {
-    font-size: 34px;
+    font-size: clamp(24px, 7vw, 32px);
+    line-height: 1.08;
+  }
+
+  .node-panel.is-full h1 {
+    font-size: clamp(30px, 8vw, 42px);
   }
 
   .legend-dock {
