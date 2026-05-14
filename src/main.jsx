@@ -1047,8 +1047,6 @@ function App() {
 
   const generateInsightFile = async (targetNode = selectedNode) => {
     if (isGeneratingInsight || isSending) return;
-    const confirmed = window.confirm('将允许 Hermes 调用工具，把本次对话写入 llm-wiki 生成新的 Markdown 文件。确认继续吗？');
-    if (!confirmed) return;
     setIsGeneratingInsight(true);
     setChatError('');
 
