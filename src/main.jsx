@@ -40,6 +40,7 @@ const categoryPalette = ['#16f2b3', '#45a8ff', '#ffcc4d', '#ff7a45', '#ff5d9e', 
 const HERMES_CHAT_COMPLETIONS_URL = '/api/hermes/v1/chat/completions';
 const HERMES_MODEL = 'hermes-agent';
 const GRAPH_MODES = { TWO_D: '2d', THREE_D: '3d' };
+const GRAPH_3D_CAMERA = { minDistance: 220, maxDistance: 760, padding: 1.18 };
 const nodeSpriteMaterialCache = new Map();
 
 const categoryIcons = {
@@ -125,6 +126,69 @@ function focusGraphNode(graphInstance, node, mode) {
   }
 }
 
+function finiteGraphNodes(graphData) {
+  return (graphData?.nodes || []).filter((node) => (
+    Number.isFinite(node.x) && Number.isFinite(node.y) && Number.isFinite(node.z)
+  ));
+}
+
+function getGraphCenterAndSpan(nodes) {
+  const bounds = nodes.reduce((box, node) => ({
+    minX: Math.min(box.minX, node.x),
+    maxX: Math.max(box.maxX, node.x),
+    minY: Math.min(box.minY, node.y),
+    maxY: Math.max(box.maxY, node.y),
+    minZ: Math.min(box.minZ, node.z),
+    maxZ: Math.max(box.maxZ, node.z)
+  }), {
+    minX: Infinity,
+    maxX: -Infinity,
+    minY: Infinity,
+    maxY: -Infinity,
+    minZ: Infinity,
+    maxZ: -Infinity
+  });
+
+  return {
+    center: {
+      x: (bounds.minX + bounds.maxX) / 2,
+      y: (bounds.minY + bounds.maxY) / 2,
+      z: (bounds.minZ + bounds.maxZ) / 2
+    },
+    span: Math.max(
+      bounds.maxX - bounds.minX,
+      bounds.maxY - bounds.minY,
+      bounds.maxZ - bounds.minZ,
+      1
+    )
+  };
+}
+
+function fitGraphView(graphInstance, graphData, mode, duration = 850) {
+  if (!graphInstance) return;
+  if (mode !== GRAPH_MODES.THREE_D) {
+    graphInstance.zoomToFit?.(duration, 90);
+    return;
+  }
+
+  const nodes = finiteGraphNodes(graphData);
+  if (!nodes.length) {
+    graphInstance.zoomToFit?.(duration, 40);
+    return;
+  }
+
+  const { center, span } = getGraphCenterAndSpan(nodes);
+  const distance = Math.min(
+    GRAPH_3D_CAMERA.maxDistance,
+    Math.max(GRAPH_3D_CAMERA.minDistance, span * GRAPH_3D_CAMERA.padding)
+  );
+  graphInstance.cameraPosition?.(
+    { x: center.x, y: center.y, z: center.z + distance },
+    center,
+    duration
+  );
+}
+
 function getNodeSpriteMaterial(color, state) {
   const key = `${color}-${state}`;
   if (nodeSpriteMaterialCache.has(key)) return nodeSpriteMaterialCache.get(key);
@@ -180,7 +244,7 @@ function createNodeSprite(node, selectedNodeId, neighborsById) {
       ? 'neighbor'
       : 'normal';
   const sprite = new THREE.Sprite(getNodeSpriteMaterial(cat.color, state));
-  const size = state === 'selected' ? 18 : state === 'neighbor' ? 13 : 9;
+  const size = state === 'selected' ? 30 : state === 'neighbor' ? 22 : 16;
   sprite.scale.set(size, size, 1);
   return sprite;
 }
@@ -855,9 +919,9 @@ function App() {
     setIsPanelOpen(false);
     setChatNode(null);
     requestAnimationFrame(() => {
-      fgRef.current?.zoomToFit(850, 90);
+      fitGraphView(fgRef.current, graph, graphMode, 850);
     });
-  }, [categoryKeys, graph.nodes]);
+  }, [categoryKeys, graph, graphMode]);
 
   const toggleGraphMode = useCallback(() => {
     didInitialFitRef.current = false;
@@ -874,7 +938,7 @@ function App() {
       if (!['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', '+', '=', '-', '_', '0'].includes(key)) return;
       event.preventDefault();
       if (key === '0') {
-        graphInstance.zoomToFit?.(450, 90);
+        fitGraphView(graphInstance, filteredGraph, graphMode, 450);
         return;
       }
 
@@ -907,9 +971,9 @@ function App() {
       graphInstance.zoom?.((graphInstance.zoom?.() || 1) * 0.84, 220);
     } else if (event.key === '0') {
       event.preventDefault();
-      graphInstance.zoomToFit?.(450, 90);
+      fitGraphView(graphInstance, filteredGraph, graphMode, 450);
     }
-  }, [graphMode]);
+  }, [filteredGraph, graphMode]);
 
   const toggleTheme = () => {
     setTheme((current) => {
@@ -1009,16 +1073,20 @@ function App() {
     try {
       graphInstance = graphMode === GRAPH_MODES.THREE_D
         ? new ForceGraph3D(host, {
-          controlType: 'trackball',
-          rendererConfig: { alpha: true, antialias: true }
+          controlType: 'orbit',
+          rendererConfig: {
+            alpha: true,
+            antialias: false,
+            powerPreference: 'high-performance'
+          }
         })
           .backgroundColor('rgba(0,0,0,0)')
           .showNavInfo(false)
           .enableNavigationControls(true)
           .enableNodeDrag(true)
-          .cooldownTicks(120)
-          .d3AlphaDecay(0.018)
-          .d3VelocityDecay(0.18)
+          .cooldownTicks(90)
+          .d3AlphaDecay(0.024)
+          .d3VelocityDecay(0.26)
           .nodeRelSize(4)
           .nodeResolution(18)
           .nodeLabel((node) => `${node.name}<br/><span>${getCategoryMeta(node.category).label}</span>`)
@@ -1053,9 +1121,11 @@ function App() {
     if (graphMode === GRAPH_MODES.THREE_D) {
       const controls = graphInstance.controls?.();
       if (controls) {
-        controls.rotateSpeed = 3.2;
-        controls.zoomSpeed = 1.1;
-        controls.panSpeed = 0.8;
+        controls.rotateSpeed = 0.78;
+        controls.zoomSpeed = 0.92;
+        controls.panSpeed = 0.72;
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.08;
       }
     }
 
@@ -1097,9 +1167,9 @@ function App() {
           : (theme === 'dark' ? 'rgba(120, 220, 255, .18)' : 'rgba(41, 87, 113, .18)'))
         .linkWidth((link) => linkTouchesNode(link, selectedNodeId) ? 1.8 : 0.55)
         .linkOpacity(0.72)
-        .linkDirectionalParticles((link) => linkTouchesNode(link, selectedNodeId) ? 2 : 0)
-        .linkDirectionalParticleWidth(1.6)
-        .linkDirectionalParticleSpeed(0.004)
+        .linkDirectionalParticles((link) => linkTouchesNode(link, selectedNodeId) ? 1 : 0)
+        .linkDirectionalParticleWidth(1.25)
+        .linkDirectionalParticleSpeed(0.0025)
         .onNodeClick(focusNode);
     } else {
       graphInstance
@@ -1144,10 +1214,10 @@ function App() {
     if (!didInitialFitRef.current && filteredGraph.nodes.length) {
       didInitialFitRef.current = true;
       graphInstance.onEngineStop(() => {
-        graphInstance.zoomToFit(900, 120);
+        fitGraphView(graphInstance, filteredGraph, graphMode, 900);
         graphInstance.onEngineStop(() => {});
       });
-      window.setTimeout(() => graphInstance.zoomToFit(900, 120), 450);
+      window.setTimeout(() => fitGraphView(graphInstance, filteredGraph, graphMode, 900), 650);
     }
   }, [filteredGraph, focusNode, graphMode, graphReady, neighborsById, selectedNode, theme]);
 
