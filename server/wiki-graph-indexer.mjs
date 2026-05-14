@@ -110,13 +110,11 @@ export async function buildGraphFromWiki(wikiDir) {
   const nodes = new Map();
   const links = [];
   const linkKeys = new Set();
-  const unresolvedReferences = new Set();
 
   const addLink = (source, target) => {
     const sourceId = normalizeId(String(source || ''), wikiDir);
     const targetId = normalizeId(String(target || ''), wikiDir);
     if (!sourceId || !targetId || sourceId === targetId || shouldIgnoreReference(targetId)) return;
-    if (!nodes.has(targetId)) unresolvedReferences.add(targetId);
     const key = `${sourceId}::${targetId}`;
     if (linkKeys.has(key)) return;
     linkKeys.add(key);
@@ -134,23 +132,11 @@ export async function buildGraphFromWiki(wikiDir) {
     }
   }
 
-  for (const id of unresolvedReferences) {
-    if (nodes.has(id) || shouldIgnoreReference(id)) continue;
-    nodes.set(id, {
-      id,
-      name: titleFromId(id),
-      category: 'references',
-      summary: '此概念被 llm-wiki 中的页面引用，但尚未创建独立文档。',
-      sourcePath: null,
-      contentUrl: null
-    });
-  }
-
   return {
     generatedAt: new Date().toISOString(),
     wikiDir,
     nodes: [...nodes.values()],
-    links
+    links: links.filter((link) => nodes.has(link.source) && nodes.has(link.target))
   };
 }
 
