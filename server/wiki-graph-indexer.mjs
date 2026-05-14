@@ -9,7 +9,7 @@ const IGNORED_DIRS = new Set(['.git', '.obsidian', 'node_modules', '.trash']);
 
 export function resolveWikiDir(env = process.env) {
   const candidates = [
-    env.HERMES_WIKI_DIR,
+    expandHome(env.HERMES_WIKI_DIR),
     path.join(homedir(), '.hermes', 'llm-wiki'),
     path.join(process.cwd(), 'wiki')
   ].filter(Boolean);
@@ -23,6 +23,11 @@ export function resolveWikiDir(env = process.env) {
   });
 
   return found ? path.resolve(found) : path.resolve(candidates[0]);
+}
+
+function expandHome(value) {
+  if (!value) return value;
+  return String(value).replace(/^~(?=$|\/|\\)/, homedir());
 }
 
 export function createWikiGraphIndexer({ wikiDir = resolveWikiDir(), debounceMs = 450 } = {}) {

@@ -1,89 +1,9 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
-import { existsSync, readFileSync } from 'node:fs';
-import { mkdir, readFile, writeFile } from 'node:fs/promises';
-import http from 'node:http';
-import https from 'node:https';
-import { homedir } from 'node:os';
-import { join } from 'node:path';
 import { createAuth } from './server/auth.mjs';
+import { readChatHistory, summarizeChatHistory, writeChatHistory } from './server/chat-history.mjs';
+import { detectHermesTarget, loadRuntimeEnv } from './server/runtime-config.mjs';
 import { createWikiGraphIndexer, resolveWikiDir } from './server/wiki-graph-indexer.mjs';
-
-function loadEnvFile(filePath) {
-  if (!existsSync(filePath)) return {};
-  return readFileSync(filePath, 'utf8')
-    .split(/\r?\n/)
-    .reduce((env, line) => {
-      const trimmed = line.trim();
-      if (!trimmed || trimmed.startsWith('#')) return env;
-      const match = trimmed.match(/^([A-Za-z_][A-Za-z0-9_]*)=(.*)$/);
-      if (!match) return env;
-      const [, key, rawValue] = match;
-      env[key] = rawValue.trim().replace(/^['"]|['"]$/g, '');
-      return env;
-    }, {});
-}
-
-function findHermesTargetFromLog(logPath) {
-  if (!existsSync(logPath)) return '';
-  const text = readFileSync(logPath, 'utf8');
-  const matches = [...text.matchAll(/API server listening on (https?:\/\/[^\s]+) \(model:/g)];
-  return matches.at(-1)?.[1] || '';
-}
-
-function requestHealth(target, timeoutMs = 700) {
-  return new Promise((resolve) => {
-    const url = new URL('/health', target);
-    const client = url.protocol === 'https:' ? https : http;
-    const request = client.get(url, { timeout: timeoutMs }, (response) => {
-      response.resume();
-      resolve(response.statusCode === 200);
-    });
-    request.on('timeout', () => {
-      request.destroy();
-      resolve(false);
-    });
-    request.on('error', () => resolve(false));
-  });
-}
-
-async function detectHermesTarget(env) {
-  if (env.HERMES_API_TARGET) return env.HERMES_API_TARGET;
-
-  const logTarget = findHermesTargetFromLog(join(homedir(), '.hermes', 'logs', 'gateway.log'));
-  if (logTarget && await requestHealth(logTarget)) return logTarget;
-
-  const candidates = ['8643', '8642'].map((port) => `http://127.0.0.1:${port}`);
-  for (const candidate of candidates) {
-    if (await requestHealth(candidate)) return candidate;
-  }
-
-  return candidates[0];
-}
-
-async function readDevChatHistory(nodeId) {
-  if (!nodeId) return [];
-  const filePath = devChatHistoryPath(nodeId);
-  if (!existsSync(filePath)) return [];
-  try {
-    const data = JSON.parse(await readFile(filePath, 'utf8'));
-    return Array.isArray(data.messages) ? data.messages : [];
-  } catch {
-    return [];
-  }
-}
-
-async function writeDevChatHistory(nodeId, messages) {
-  if (!nodeId) return;
-  const filePath = devChatHistoryPath(nodeId);
-  await mkdir(join(process.cwd(), 'data', 'chat-history'), { recursive: true });
-  await writeFile(filePath, JSON.stringify({ nodeId, updatedAt: new Date().toISOString(), messages: messages.slice(-80) }, null, 2));
-}
-
-function devChatHistoryPath(nodeId) {
-  const safeId = String(nodeId).replace(/[^a-zA-Z0-9\u4e00-\u9fa5_-]+/g, '_').slice(0, 140) || 'node';
-  return join(process.cwd(), 'data', 'chat-history', `${safeId}.json`);
-}
 
 async function readDevJsonBody(request) {
   let body = '';
@@ -91,12 +11,7 @@ async function readDevJsonBody(request) {
   return body ? JSON.parse(body) : {};
 }
 
-const hermesEnv = {
-  ...loadEnvFile(join(homedir(), '.hermes', '.env')),
-  ...loadEnvFile(join(process.cwd(), '.hermes', '.env')),
-  ...process.env
-};
-
+const hermesEnv = loadRuntimeEnv();
 const hermesResolvedApiKey = hermesEnv.API_SERVER_KEY || '';
 const hermesBaseUrl = '/api/hermes/v1';
 
@@ -139,18 +54,25 @@ export default defineConfig(async ({ command }) => {
           if (request.method === 'GET') {
             response.setHeader('Content-Type', 'application/json');
             response.setHeader('Cache-Control', 'no-store');
-            response.end(JSON.stringify({ messages: await readDevChatHistory(url.searchParams.get('nodeId') || '') }));
+            response.end(JSON.stringify({ messages: await readChatHistory(process.cwd(), url.searchParams.get('nodeId') || '') }));
             return;
           }
           if (request.method === 'PUT') {
             const body = await readDevJsonBody(request);
-            await writeDevChatHistory(body.nodeId, Array.isArray(body.messages) ? body.messages : []);
+            await writeChatHistory(process.cwd(), body.nodeId, body.messages);
             response.setHeader('Content-Type', 'application/json');
             response.end(JSON.stringify({ ok: true }));
             return;
           }
           response.statusCode = 405;
           response.end('Method not allowed');
+        });
+        server.middlewares.use('/api/chat/summary', async (request, response) => {
+          const url = new URL(request.url || '', 'http://localhost');
+          const nodeId = url.searchParams.get('nodeId') || '';
+          response.setHeader('Content-Type', 'application/json');
+          response.setHeader('Cache-Control', 'no-store');
+          response.end(JSON.stringify(summarizeChatHistory(nodeId, await readChatHistory(process.cwd(), nodeId))));
         });
         server.middlewares.use('/api/wiki/content', async (request, response) => {
           const url = new URL(request.url || '', 'http://localhost');

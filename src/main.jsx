@@ -1014,7 +1014,8 @@ function App() {
 
     setNodeMessages(targetNode.id, (current) => [
       ...current,
-      { role: 'system', text: '正在将本次对话提炼为 Wiki 洞察文件，写入 llm-wiki 知识库...' }
+      { role: 'system', text: '正在将本次对话提炼为 Wiki 洞察文件，写入 llm-wiki 知识库...' },
+      { role: 'agent', text: '' }
     ]);
 
     try {

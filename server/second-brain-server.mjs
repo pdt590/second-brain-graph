@@ -1,21 +1,22 @@
-import { createReadStream, existsSync, readFileSync } from 'node:fs';
-import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { createReadStream, existsSync } from 'node:fs';
 import http from 'node:http';
 import https from 'node:https';
-import { homedir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createAuth, sendJson } from './auth.mjs';
+import { readChatHistory, summarizeChatHistory, writeChatHistory } from './chat-history.mjs';
+import { getHermesConfig, loadRuntimeEnv } from './runtime-config.mjs';
 import { createWikiGraphIndexer, resolveWikiDir } from './wiki-graph-indexer.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const rootDir = path.resolve(__dirname, '..');
 const distDir = path.join(rootDir, 'dist');
-const port = Number(process.env.SECOND_BRAIN_PORT || 3030);
-const host = process.env.SECOND_BRAIN_HOST || '127.0.0.1';
-const wikiDir = resolveWikiDir();
+const env = loadRuntimeEnv({ rootDir });
+const port = Number(env.SECOND_BRAIN_PORT || 3030);
+const host = env.SECOND_BRAIN_HOST || '127.0.0.1';
+const wikiDir = resolveWikiDir(env);
 const indexer = createWikiGraphIndexer({ wikiDir });
-const auth = await createAuth({ rootDir });
+const auth = await createAuth({ rootDir, env });
 
 await indexer.start();
 console.log(`[second-brain] wiki dir: ${wikiDir}`);
@@ -56,14 +57,14 @@ async function handleChatHistory(request, response, url) {
   if (request.method === 'GET') {
     const nodeId = url.searchParams.get('nodeId');
     if (!nodeId) return sendJson(response, { error: 'Missing nodeId' }, 400);
-    return sendJson(response, { messages: await readChatHistory(nodeId) });
+    return sendJson(response, { messages: await readChatHistory(rootDir, nodeId) });
   }
 
   if (request.method === 'PUT') {
     const body = await readJsonBody(request);
     if (!body.nodeId) return sendJson(response, { error: 'Missing nodeId' }, 400);
     const messages = Array.isArray(body.messages) ? body.messages : [];
-    await writeChatHistory(body.nodeId, messages);
+    await writeChatHistory(rootDir, body.nodeId, messages);
     return sendJson(response, { ok: true });
   }
 
@@ -75,61 +76,7 @@ async function handleChatSummary(request, response, url) {
   const nodeId = url.searchParams.get('nodeId');
   if (!nodeId) return sendJson(response, { error: 'Missing nodeId' }, 400);
 
-  const messages = await readChatHistory(nodeId);
-  if (!messages.length) return sendJson(response, { nodeId, totalMessages: 0, conversations: [] });
-
-  // Group into user-assistant pairs, extract summary of recent conversations
-  const conversations = [];
-  for (let i = 0; i < messages.length; i++) {
-    if (messages[i].role === 'user') {
-      const userQuestion = messages[i].text;
-      let aiAnswer = '';
-      let pairCount = 1;
-      if (i + 1 < messages.length && messages[i + 1].role === 'agent') {
-        aiAnswer = messages[i + 1].text;
-        pairCount = 2;
-      }
-      conversations.push({
-        userQuestion: userQuestion.slice(0, 120),
-        aiSummary: aiAnswer.slice(0, 150),
-        messageCount: pairCount
-      });
-    }
-  }
-
-  // Return the last 5 conversation summaries
-  return sendJson(response, {
-    nodeId,
-    totalMessages: messages.length,
-    conversations: conversations.slice(-5)
-  });
-}
-
-async function readChatHistory(nodeId) {
-  const filePath = chatHistoryPath(nodeId);
-  if (!existsSync(filePath)) return [];
-  try {
-    const data = JSON.parse(await readFile(filePath, 'utf8'));
-    return Array.isArray(data.messages) ? data.messages : [];
-  } catch {
-    return [];
-  }
-}
-
-async function writeChatHistory(nodeId, messages) {
-  const filePath = chatHistoryPath(nodeId);
-  await mkdir(path.dirname(filePath), { recursive: true });
-  await writeFile(filePath, JSON.stringify({
-    nodeId,
-    updatedAt: new Date().toISOString(),
-    messages: messages
-      .filter((message) => ['user', 'agent'].includes(message.role) && typeof message.text === 'string')
-  }, null, 2));
-}
-
-function chatHistoryPath(nodeId) {
-  const safeId = String(nodeId).replace(/[^a-zA-Z0-9\u4e00-\u9fa5_-]+/g, '_').slice(0, 140) || 'node';
-  return path.join(rootDir, 'data', 'chat-history', `${safeId}.json`);
+  return sendJson(response, summarizeChatHistory(nodeId, await readChatHistory(rootDir, nodeId)));
 }
 
 async function readJsonBody(request) {
@@ -152,7 +99,7 @@ function sendWikiEvents(request, response) {
 }
 
 async function proxyHermes(request, response, url) {
-  const config = await getHermesConfig();
+  const config = await getHermesConfig(env);
   const target = new URL(url.pathname.replace(/^\/api\/hermes/, '') + url.search, config.target);
   const client = target.protocol === 'https:' ? https : http;
   const headers = { ...request.headers, host: target.host };
@@ -172,42 +119,6 @@ async function proxyHermes(request, response, url) {
 
   proxyRequest.on('error', (error) => sendJson(response, { error: error.message }, 502));
   request.pipe(proxyRequest);
-}
-
-async function getHermesConfig() {
-  const env = {
-    ...loadEnvFile(path.join(homedir(), '.hermes', '.env')),
-    ...loadEnvFile(path.join(process.cwd(), '.hermes', '.env')),
-    ...process.env
-  };
-  const target = env.HERMES_API_TARGET
-    || findHermesTargetFromLog(path.join(homedir(), '.hermes', 'logs', 'gateway.log'))
-    || 'http://127.0.0.1:8643';
-  return {
-    target,
-    apiKey: env.API_SERVER_KEY || ''
-  };
-}
-
-function loadEnvFile(filePath) {
-  if (!existsSync(filePath)) return {};
-  return readFileSync(filePath, 'utf8')
-    .split(/\r?\n/)
-    .reduce((env, line) => {
-      const trimmed = line.trim();
-      if (!trimmed || trimmed.startsWith('#')) return env;
-      const match = trimmed.match(/^([A-Za-z_][A-Za-z0-9_]*)=(.*)$/);
-      if (!match) return env;
-      env[match[1]] = match[2].trim().replace(/^['"]|['"]$/g, '');
-      return env;
-    }, {});
-}
-
-function findHermesTargetFromLog(logPath) {
-  if (!existsSync(logPath)) return '';
-  const text = readFileSync(logPath, 'utf8');
-  const matches = [...text.matchAll(/API server listening on (https?:\/\/[^\s]+) \(model:/g)];
-  return matches.at(-1)?.[1] || '';
 }
 
 async function sendStatic(url, response) {
