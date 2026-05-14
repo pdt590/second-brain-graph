@@ -1519,13 +1519,22 @@ button {
   .legend-dock {
     left: 12px;
     right: 12px;
+    max-width: calc(100vw - 24px);
     bottom: calc(12px + env(safe-area-inset-bottom, 0px));
     justify-content: center;
+    gap: 8px;
+    padding: 8px;
   }
 
   .legend-dot {
-    width: 38px;
-    height: 38px;
+    width: 36px;
+    height: 36px;
+  }
+
+  .category-popover {
+    left: 50%;
+    transform: translateX(-50%);
+    width: min(340px, calc(100vw - 24px));
   }
 
   .ai-fab {

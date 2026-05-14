@@ -69,6 +69,12 @@ function titleFromCategory(category) {
     .join(' ') || 'Root';
 }
 
+function getQuickCategoryLimit(width = window.innerWidth) {
+  if (width <= 720) return 4;
+  if (width <= 1120) return 6;
+  return 8;
+}
+
 const seedNodes = [
   {
     id: 'hermes-agent',
@@ -567,6 +573,7 @@ function App() {
   const [activeCats, setActiveCats] = useState(new Set());
   const [isCategoryPanelOpen, setIsCategoryPanelOpen] = useState(false);
   const [categoryQuery, setCategoryQuery] = useState('');
+  const [quickCategoryLimit, setQuickCategoryLimit] = useState(() => getQuickCategoryLimit());
   const [isFull, setIsFull] = useState(false);
   const [isPanelOpen, setIsPanelOpen] = useState(false);
   const [chatNode, setChatNode] = useState(null);
@@ -598,7 +605,7 @@ function App() {
       .map((key) => ({ key, count: counts.get(key) || 0, meta: getCategoryMeta(key) }))
       .sort((a, b) => b.count - a.count || a.meta.label.localeCompare(b.meta.label));
   }, [categoryKeys, graph.nodes]);
-  const quickCategories = categoryStats.slice(0, 8);
+  const quickCategories = categoryStats.slice(0, quickCategoryLimit);
   const filteredCategoryStats = useMemo(() => {
     const normalized = categoryQuery.trim().toLowerCase();
     if (!normalized) return categoryStats;
@@ -612,6 +619,13 @@ function App() {
   useEffect(() => {
     setActiveCats(new Set(categoryKeys));
   }, [categoryKeys.join('|')]);
+
+  useEffect(() => {
+    const resize = () => setQuickCategoryLimit(getQuickCategoryLimit());
+    resize();
+    window.addEventListener('resize', resize);
+    return () => window.removeEventListener('resize', resize);
+  }, []);
 
   useEffect(() => {
     if (!chatNode || loadedChatNodes.has(chatNode.id)) return;
