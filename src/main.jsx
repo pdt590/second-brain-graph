@@ -1,6 +1,8 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
-import ForceGraph from 'force-graph';
+import ForceGraph2D from 'force-graph';
+import ForceGraph3D from '3d-force-graph';
+import * as THREE from 'three';
 import {
   ArrowUpRight,
   Bot,
@@ -37,6 +39,8 @@ import './styles.css';
 const categoryPalette = ['#16f2b3', '#45a8ff', '#ffcc4d', '#ff7a45', '#ff5d9e', '#7c6dff', '#34d399', '#f472b6', '#22d3ee', '#a3e635'];
 const HERMES_CHAT_COMPLETIONS_URL = '/api/hermes/v1/chat/completions';
 const HERMES_MODEL = 'hermes-agent';
+const GRAPH_MODES = { TWO_D: '2d', THREE_D: '3d' };
+const nodeSpriteMaterialCache = new Map();
 
 const categoryIcons = {
   root: BrainCircuit,
@@ -73,6 +77,112 @@ function getQuickCategoryLimit(width = window.innerWidth) {
   if (width <= 720) return 4;
   if (width <= 1120) return 6;
   return 8;
+}
+
+function hasWebGLSupport() {
+  try {
+    const canvas = document.createElement('canvas');
+    return Boolean(window.WebGLRenderingContext && (canvas.getContext('webgl') || canvas.getContext('experimental-webgl')));
+  } catch {
+    return false;
+  }
+}
+
+function linkEndpointId(endpoint) {
+  return typeof endpoint === 'object' ? endpoint.id : endpoint;
+}
+
+function linkTouchesNode(link, nodeId) {
+  return linkEndpointId(link.source) === nodeId || linkEndpointId(link.target) === nodeId;
+}
+
+function focusGraphNode(graphInstance, node, mode) {
+  if (!graphInstance || !node) return;
+  if (mode === GRAPH_MODES.THREE_D) {
+    const { x = 0, y = 0, z = 0 } = node;
+    if (![x, y, z].every(Number.isFinite)) return;
+    const current = graphInstance.cameraPosition?.() || { x: 0, y: 0, z: 460 };
+    const dx = current.x - x;
+    const dy = current.y - y;
+    const dz = current.z - z;
+    const length = Math.hypot(dx, dy, dz) || 1;
+    const distance = 230;
+    graphInstance.cameraPosition(
+      {
+        x: x + (dx / length) * distance,
+        y: y + (dy / length) * distance,
+        z: z + (dz / length) * distance
+      },
+      { x, y, z },
+      850
+    );
+    return;
+  }
+
+  if (Number.isFinite(node.x) && Number.isFinite(node.y)) {
+    graphInstance.centerAt(node.x, node.y, 850);
+    graphInstance.zoom(4.2, 850);
+  }
+}
+
+function getNodeSpriteMaterial(color, state) {
+  const key = `${color}-${state}`;
+  if (nodeSpriteMaterialCache.has(key)) return nodeSpriteMaterialCache.get(key);
+
+  const canvas = document.createElement('canvas');
+  canvas.width = 96;
+  canvas.height = 96;
+  const ctx = canvas.getContext('2d');
+  const intensity = state === 'selected' ? 1 : state === 'neighbor' ? 0.82 : 0.62;
+  const outerAlpha = state === 'selected' ? 0.34 : state === 'neighbor' ? 0.22 : 0.14;
+  const radius = state === 'selected' ? 39 : state === 'neighbor' ? 35 : 31;
+  const cx = 48;
+  const cy = 48;
+
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  const glow = ctx.createRadialGradient(cx, cy, 2, cx, cy, 46);
+  glow.addColorStop(0, `rgba(255,255,255,${0.34 * intensity})`);
+  glow.addColorStop(0.28, `${color}f2`);
+  glow.addColorStop(0.7, `${color}${Math.round(outerAlpha * 255).toString(16).padStart(2, '0')}`);
+  glow.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = glow;
+  ctx.beginPath();
+  ctx.arc(cx, cy, 46, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.fillStyle = color;
+  ctx.globalAlpha = intensity;
+  ctx.beginPath();
+  ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.globalAlpha = state === 'selected' ? 0.42 : 0.24;
+  ctx.strokeStyle = '#ffffff';
+  ctx.lineWidth = state === 'selected' ? 4 : 2;
+  ctx.stroke();
+  ctx.globalAlpha = 1;
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.needsUpdate = true;
+  const material = new THREE.SpriteMaterial({
+    map: texture,
+    transparent: true,
+    depthWrite: false
+  });
+  nodeSpriteMaterialCache.set(key, material);
+  return material;
+}
+
+function createNodeSprite(node, selectedNodeId, neighborsById) {
+  const cat = getCategoryMeta(node.category);
+  const state = node.id === selectedNodeId
+    ? 'selected'
+    : neighborsById.get(selectedNodeId)?.has(node.id)
+      ? 'neighbor'
+      : 'normal';
+  const sprite = new THREE.Sprite(getNodeSpriteMaterial(cat.color, state));
+  const size = state === 'selected' ? 18 : state === 'neighbor' ? 13 : 9;
+  sprite.scale.set(size, size, 1);
+  return sprite;
 }
 
 const seedNodes = [
@@ -559,6 +669,8 @@ function App() {
   const fgRef = useRef();
   const didInitialFitRef = useRef(false);
   const [graphReady, setGraphReady] = useState(false);
+  const [graphMode, setGraphMode] = useState(GRAPH_MODES.THREE_D);
+  const [graphNotice, setGraphNotice] = useState('');
   const [theme, setTheme] = useState(() => {
     const stored = window.localStorage.getItem('hermes-graph-theme');
     if (stored === 'light' || stored === 'dark') return stored;
@@ -732,11 +844,8 @@ function App() {
     setSelectedId(node.id);
     setIsFull(false);
     setIsPanelOpen(true);
-    if (fgRef.current && Number.isFinite(node.x) && Number.isFinite(node.y)) {
-      fgRef.current.centerAt(node.x, node.y, 850);
-      fgRef.current.zoom(4.2, 850);
-    }
-  }, []);
+    focusGraphNode(fgRef.current, node, graphMode);
+  }, [graphMode]);
 
   const restoreGraph = useCallback(() => {
     setQuery('');
@@ -749,6 +858,58 @@ function App() {
       fgRef.current?.zoomToFit(850, 90);
     });
   }, [categoryKeys, graph.nodes]);
+
+  const toggleGraphMode = useCallback(() => {
+    didInitialFitRef.current = false;
+    setGraphNotice('');
+    setGraphMode((current) => current === GRAPH_MODES.THREE_D ? GRAPH_MODES.TWO_D : GRAPH_MODES.THREE_D);
+  }, []);
+
+  const handleGraphKeyDown = useCallback((event) => {
+    const graphInstance = fgRef.current;
+    if (!graphInstance) return;
+
+    if (graphMode === GRAPH_MODES.THREE_D) {
+      const key = event.key;
+      if (!['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', '+', '=', '-', '_', '0'].includes(key)) return;
+      event.preventDefault();
+      if (key === '0') {
+        graphInstance.zoomToFit?.(450, 90);
+        return;
+      }
+
+      const current = graphInstance.cameraPosition?.() || { x: 0, y: 0, z: 460 };
+      let next = { ...current };
+      const angle = Math.PI / 18;
+      if (key === '+' || key === '=') {
+        next = { x: current.x * 0.84, y: current.y * 0.84, z: current.z * 0.84 };
+      } else if (key === '-' || key === '_') {
+        next = { x: current.x * 1.18, y: current.y * 1.18, z: current.z * 1.18 };
+      } else if (key === 'ArrowLeft' || key === 'ArrowRight') {
+        const dir = key === 'ArrowLeft' ? -1 : 1;
+        next = {
+          x: current.x * Math.cos(angle * dir) - current.z * Math.sin(angle * dir),
+          y: current.y,
+          z: current.x * Math.sin(angle * dir) + current.z * Math.cos(angle * dir)
+        };
+      } else if (key === 'ArrowUp' || key === 'ArrowDown') {
+        next = { ...current, y: current.y + (key === 'ArrowUp' ? 40 : -40) };
+      }
+      graphInstance.cameraPosition?.(next, { x: 0, y: 0, z: 0 }, 220);
+      return;
+    }
+
+    if (event.key === '+' || event.key === '=') {
+      event.preventDefault();
+      graphInstance.zoom?.((graphInstance.zoom?.() || 1) * 1.18, 220);
+    } else if (event.key === '-' || event.key === '_') {
+      event.preventDefault();
+      graphInstance.zoom?.((graphInstance.zoom?.() || 1) * 0.84, 220);
+    } else if (event.key === '0') {
+      event.preventDefault();
+      graphInstance.zoomToFit?.(450, 90);
+    }
+  }, [graphMode]);
 
   const toggleTheme = () => {
     setTheme((current) => {
@@ -833,25 +994,74 @@ function App() {
   useEffect(() => {
     if (!authUser) return undefined;
     const host = graphHostRef.current;
-    if (!host || fgRef.current) return;
+    if (!host) return undefined;
 
-    const graphInstance = new ForceGraph(host)
-      .backgroundColor('rgba(0,0,0,0)')
-      .cooldownTicks(80)
-      .d3AlphaDecay(0.018)
-      .d3VelocityDecay(0.22)
-      .nodeRelSize(6)
-      .nodePointerAreaPaint((node, color, ctx) => {
-        if (!Number.isFinite(node.x) || !Number.isFinite(node.y)) return;
-        ctx.fillStyle = color;
-        ctx.beginPath();
-        ctx.arc(node.x, node.y, 18, 0, 2 * Math.PI, false);
-        ctx.fill();
-      })
-      .showPointerCursor((node) => Boolean(node));
+    setGraphReady(false);
+    host.replaceChildren();
+
+    if (graphMode === GRAPH_MODES.THREE_D && !hasWebGLSupport()) {
+      setGraphNotice('当前浏览器不支持 WebGL，已切换到 2D 图谱。');
+      setGraphMode(GRAPH_MODES.TWO_D);
+      return undefined;
+    }
+
+    let graphInstance;
+    try {
+      graphInstance = graphMode === GRAPH_MODES.THREE_D
+        ? new ForceGraph3D(host, {
+          controlType: 'trackball',
+          rendererConfig: { alpha: true, antialias: true }
+        })
+          .backgroundColor('rgba(0,0,0,0)')
+          .showNavInfo(false)
+          .enableNavigationControls(true)
+          .enableNodeDrag(true)
+          .cooldownTicks(120)
+          .d3AlphaDecay(0.018)
+          .d3VelocityDecay(0.18)
+          .nodeRelSize(4)
+          .nodeResolution(18)
+          .nodeLabel((node) => `${node.name}<br/><span>${getCategoryMeta(node.category).label}</span>`)
+          .onNodeDragEnd((node) => {
+            node.fx = node.x;
+            node.fy = node.y;
+            node.fz = node.z;
+          })
+          .showPointerCursor((node) => Boolean(node))
+        : new ForceGraph2D(host)
+          .backgroundColor('rgba(0,0,0,0)')
+          .cooldownTicks(80)
+          .d3AlphaDecay(0.018)
+          .d3VelocityDecay(0.22)
+          .nodeRelSize(6)
+          .nodePointerAreaPaint((node, color, ctx) => {
+            if (!Number.isFinite(node.x) || !Number.isFinite(node.y)) return;
+            ctx.fillStyle = color;
+            ctx.beginPath();
+            ctx.arc(node.x, node.y, 18, 0, 2 * Math.PI, false);
+            ctx.fill();
+          })
+          .showPointerCursor((node) => Boolean(node));
+    } catch {
+      if (graphMode === GRAPH_MODES.THREE_D) {
+        setGraphNotice('3D 图谱初始化失败，已切换到 2D 图谱。');
+        setGraphMode(GRAPH_MODES.TWO_D);
+      }
+      return undefined;
+    }
+
+    if (graphMode === GRAPH_MODES.THREE_D) {
+      const controls = graphInstance.controls?.();
+      if (controls) {
+        controls.rotateSpeed = 3.2;
+        controls.zoomSpeed = 1.1;
+        controls.panSpeed = 0.8;
+      }
+    }
 
     fgRef.current = graphInstance;
     setGraphReady(true);
+    graphHostRef.current?.focus({ preventScroll: true });
 
     const resize = () => {
       graphInstance
@@ -864,56 +1074,72 @@ function App() {
     return () => {
       window.removeEventListener('resize', resize);
       graphInstance._destructor();
+      host.replaceChildren();
       fgRef.current = null;
       setGraphReady(false);
     };
-  }, [authUser]);
+  }, [authUser, graphMode]);
 
   useEffect(() => {
     const graphInstance = fgRef.current;
     if (!graphReady || !graphInstance) return;
 
-    graphInstance
-      .graphData(filteredGraph)
-      .linkColor(() => theme === 'dark' ? 'rgba(120, 220, 255, 0.24)' : 'rgba(41, 87, 113, 0.24)')
-      .linkWidth((link) => {
-        const source = typeof link.source === 'object' ? link.source.id : link.source;
-        const target = typeof link.target === 'object' ? link.target.id : link.target;
-        return source === selectedNode.id || target === selectedNode.id ? 2.4 : 0.8;
-      })
-      .nodeCanvasObject((node, ctx, globalScale) => {
-        if (!Number.isFinite(node.x) || !Number.isFinite(node.y)) return;
-        const cat = getCategoryMeta(node.category);
-        const isSelected = node.id === selectedNode.id;
-        const isNeighbor = neighborsById.get(selectedNode.id)?.has(node.id);
-        const radius = isSelected ? 11 : isNeighbor ? 8 : 6;
-        ctx.save();
+    const selectedNodeId = selectedNode?.id;
 
-        ctx.shadowColor = cat.color;
-        ctx.shadowBlur = isSelected ? 14 : isNeighbor ? 9 : 4;
-        ctx.beginPath();
-        ctx.arc(node.x, node.y, radius, 0, Math.PI * 2);
-        ctx.fillStyle = cat.color;
-        ctx.fill();
+    if (graphMode === GRAPH_MODES.THREE_D) {
+      graphInstance
+        .graphData(filteredGraph)
+        .nodeThreeObject((node) => createNodeSprite(node, selectedNodeId, neighborsById))
+        .nodeThreeObjectExtend(false)
+        .nodeOpacity(0.92)
+        .linkColor((link) => linkTouchesNode(link, selectedNodeId)
+          ? (theme === 'dark' ? 'rgba(174, 242, 255, .78)' : 'rgba(24, 94, 118, .62)')
+          : (theme === 'dark' ? 'rgba(120, 220, 255, .18)' : 'rgba(41, 87, 113, .18)'))
+        .linkWidth((link) => linkTouchesNode(link, selectedNodeId) ? 1.8 : 0.55)
+        .linkOpacity(0.72)
+        .linkDirectionalParticles((link) => linkTouchesNode(link, selectedNodeId) ? 2 : 0)
+        .linkDirectionalParticleWidth(1.6)
+        .linkDirectionalParticleSpeed(0.004)
+        .onNodeClick(focusNode);
+    } else {
+      graphInstance
+        .graphData(filteredGraph)
+        .linkColor(() => theme === 'dark' ? 'rgba(120, 220, 255, 0.24)' : 'rgba(41, 87, 113, 0.24)')
+        .linkWidth((link) => linkTouchesNode(link, selectedNodeId) ? 2.4 : 0.8)
+        .nodeCanvasObject((node, ctx, globalScale) => {
+          if (!Number.isFinite(node.x) || !Number.isFinite(node.y)) return;
+          const cat = getCategoryMeta(node.category);
+          const isSelected = node.id === selectedNodeId;
+          const isNeighbor = neighborsById.get(selectedNodeId)?.has(node.id);
+          const radius = isSelected ? 11 : isNeighbor ? 8 : 6;
+          ctx.save();
 
-        ctx.shadowBlur = 0;
-        if (isSelected || isNeighbor) {
-          ctx.lineWidth = isSelected ? 2.6 : 1.8;
-          ctx.strokeStyle = theme === 'dark' ? 'rgba(244,249,255,.86)' : 'rgba(20,39,50,.72)';
-          ctx.stroke();
-        }
+          ctx.shadowColor = cat.color;
+          ctx.shadowBlur = isSelected ? 14 : isNeighbor ? 9 : 4;
+          ctx.beginPath();
+          ctx.arc(node.x, node.y, radius, 0, Math.PI * 2);
+          ctx.fillStyle = cat.color;
+          ctx.fill();
 
-        const label = node.name;
-        const fontSize = Math.max(3, 13 / globalScale);
-        ctx.font = `600 ${fontSize}px Sora, sans-serif`;
-        ctx.textAlign = 'center';
-        ctx.fillStyle = theme === 'dark'
-          ? (isSelected || isNeighbor ? 'rgba(244,249,255,.96)' : 'rgba(187,204,218,.72)')
-          : (isSelected || isNeighbor ? 'rgba(20,39,50,.95)' : 'rgba(55,83,98,.68)');
-        ctx.fillText(label, node.x, node.y + radius + fontSize + 4 / globalScale);
-        ctx.restore();
-      })
-      .onNodeClick(focusNode);
+          ctx.shadowBlur = 0;
+          if (isSelected || isNeighbor) {
+            ctx.lineWidth = isSelected ? 2.6 : 1.8;
+            ctx.strokeStyle = theme === 'dark' ? 'rgba(244,249,255,.86)' : 'rgba(20,39,50,.72)';
+            ctx.stroke();
+          }
+
+          const label = node.name;
+          const fontSize = Math.max(3, 13 / globalScale);
+          ctx.font = `600 ${fontSize}px Sora, sans-serif`;
+          ctx.textAlign = 'center';
+          ctx.fillStyle = theme === 'dark'
+            ? (isSelected || isNeighbor ? 'rgba(244,249,255,.96)' : 'rgba(187,204,218,.72)')
+            : (isSelected || isNeighbor ? 'rgba(20,39,50,.95)' : 'rgba(55,83,98,.68)');
+          ctx.fillText(label, node.x, node.y + radius + fontSize + 4 / globalScale);
+          ctx.restore();
+        })
+        .onNodeClick(focusNode);
+    }
 
     if (!didInitialFitRef.current && filteredGraph.nodes.length) {
       didInitialFitRef.current = true;
@@ -923,7 +1149,7 @@ function App() {
       });
       window.setTimeout(() => graphInstance.zoomToFit(900, 120), 450);
     }
-  }, [filteredGraph, focusNode, graphReady, neighborsById, selectedNode, theme]);
+  }, [filteredGraph, focusNode, graphMode, graphReady, neighborsById, selectedNode, theme]);
 
   const getNodeChatContext = async (targetNode) => {
     if (!targetNode) return '';
@@ -1107,7 +1333,15 @@ function App() {
   return (
     <main className="app-shell" data-theme={theme}>
       <div className="graph-stage">
-        <div ref={graphHostRef} className="force-graph-host" />
+        <div
+          ref={graphHostRef}
+          className={`force-graph-host is-${graphMode}`}
+          tabIndex={0}
+          onKeyDown={handleGraphKeyDown}
+          onMouseDown={() => graphHostRef.current?.focus()}
+          onTouchStart={() => graphHostRef.current?.focus()}
+          aria-label={graphMode === GRAPH_MODES.THREE_D ? '3D 第二大脑知识图谱' : '2D 第二大脑知识图谱'}
+        />
       </div>
 
       <header className="topbar">
@@ -1129,6 +1363,15 @@ function App() {
             </button>
           )}
         </div>
+        <button
+          className={`graph-mode-button ${graphMode === GRAPH_MODES.THREE_D ? 'is-3d' : 'is-2d'}`}
+          onClick={toggleGraphMode}
+          aria-label={graphMode === GRAPH_MODES.THREE_D ? '切换到 2D 图谱' : '切换到 3D 图谱'}
+          title={graphMode === GRAPH_MODES.THREE_D ? '切换到 2D 图谱' : '切换到 3D 图谱'}
+        >
+          <Network size={18} />
+          <span>{graphMode === GRAPH_MODES.THREE_D ? '3D' : '2D'}</span>
+        </button>
         <button className="theme-button" onClick={toggleTheme} aria-label={theme === 'dark' ? '切换浅色模式' : '切换暗色模式'}>
           {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
         </button>
@@ -1163,6 +1406,7 @@ function App() {
 
       {graphStatus === 'loading' && <div className="graph-status">正在加载第二大脑图谱...</div>}
       {graphStatus === 'error' && <div className="graph-status">图谱加载失败，请检查服务端 llm-wiki 配置。</div>}
+      {graphNotice && <div className="graph-mode-status">{graphNotice}</div>}
 
       <aside className="legend-dock" aria-label="Knowledge categories">
         {quickCategories.map(({ key, count, meta: cat }) => {

@@ -8,11 +8,12 @@
   },
   "dependencies": {
     "@vitejs/plugin-react": "latest",
-    "vite": "latest",
+    "3d-force-graph": "^1.80.0",
+    "force-graph": "latest",
+    "lucide-react": "latest",
     "react": "latest",
     "react-dom": "latest",
-    "force-graph": "latest",
-    "lucide-react": "latest"
-  },
-  "devDependencies": {}
+    "three": "^0.184.0",
+    "vite": "latest"
+  }
 }
