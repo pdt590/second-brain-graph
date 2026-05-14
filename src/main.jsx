@@ -26,6 +26,7 @@ import {
   RotateCcw,
   Search,
   Send,
+  SlidersHorizontal,
   Sun,
   User,
   Video,
@@ -564,6 +565,8 @@ function App() {
   const [query, setQuery] = useState('');
   const [selectedId, setSelectedId] = useState('hermes-agent');
   const [activeCats, setActiveCats] = useState(new Set());
+  const [isCategoryPanelOpen, setIsCategoryPanelOpen] = useState(false);
+  const [categoryQuery, setCategoryQuery] = useState('');
   const [isFull, setIsFull] = useState(false);
   const [isPanelOpen, setIsPanelOpen] = useState(false);
   const [chatNode, setChatNode] = useState(null);
@@ -585,6 +588,23 @@ function App() {
     };
   }, [extraLinks, extraNodes, wikiGraph]);
   const categoryKeys = useMemo(() => [...new Set(graph.nodes.map((node) => node.category || 'root'))].sort(), [graph.nodes]);
+  const categoryStats = useMemo(() => {
+    const counts = new Map();
+    graph.nodes.forEach((node) => {
+      const key = node.category || 'root';
+      counts.set(key, (counts.get(key) || 0) + 1);
+    });
+    return categoryKeys
+      .map((key) => ({ key, count: counts.get(key) || 0, meta: getCategoryMeta(key) }))
+      .sort((a, b) => b.count - a.count || a.meta.label.localeCompare(b.meta.label));
+  }, [categoryKeys, graph.nodes]);
+  const quickCategories = categoryStats.slice(0, 8);
+  const filteredCategoryStats = useMemo(() => {
+    const normalized = categoryQuery.trim().toLowerCase();
+    if (!normalized) return categoryStats;
+    return categoryStats.filter(({ key, meta }) => `${key} ${meta.label}`.toLowerCase().includes(normalized));
+  }, [categoryQuery, categoryStats]);
+  const hiddenCategoryCount = Math.max(0, categoryStats.length - quickCategories.length);
   const chatMessages = chatNode
     ? messagesByNode[chatNode.id] || [{ role: 'agent', text: '可以围绕这个节点和它的邻近知识继续追问。' }]
     : [];
@@ -689,6 +709,9 @@ function App() {
       return next;
     });
   };
+
+  const selectAllCategories = () => setActiveCats(new Set(categoryKeys));
+  const clearAllCategories = () => setActiveCats(new Set());
 
   const focusNode = useCallback((node) => {
     if (!node) return;
@@ -1085,10 +1108,15 @@ function App() {
             <small>LLM-Wiki Graph</small>
           </span>
         </button>
-        <label className="search-box">
-          <Search size={18} />
-          <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="搜索第二大脑中的任意关键词..." />
-        </label>
+        <div className="search-box" role="search">
+          <Search size={18} aria-hidden="true" />
+          <input aria-label="搜索第二大脑" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="搜索第二大脑中的任意关键词..." />
+          {query && (
+            <button type="button" className="search-clear" onClick={() => setQuery('')} aria-label="清除搜索内容">
+              <X size={15} />
+            </button>
+          )}
+        </div>
         <button className="theme-button" onClick={toggleTheme} aria-label={theme === 'dark' ? '切换浅色模式' : '切换暗色模式'}>
           {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
         </button>
@@ -1125,8 +1153,7 @@ function App() {
       {graphStatus === 'error' && <div className="graph-status">图谱加载失败，请检查服务端 llm-wiki 配置。</div>}
 
       <aside className="legend-dock" aria-label="Knowledge categories">
-        {categoryKeys.map((key) => {
-          const cat = getCategoryMeta(key);
+        {quickCategories.map(({ key, count, meta: cat }) => {
           const Icon = cat.icon;
           const active = activeCats.has(key);
           return (
@@ -1138,10 +1165,55 @@ function App() {
               aria-label={cat.label}
             >
               <Icon size={17} />
-              <span className="tag-tooltip">{cat.label}</span>
+              <span className="tag-tooltip">{cat.label} · {count}</span>
             </button>
           );
         })}
+        <button
+          className={`legend-dot legend-more ${isCategoryPanelOpen ? 'is-active' : ''}`}
+          style={{ '--cat': '#16f2b3' }}
+          onClick={() => setIsCategoryPanelOpen((value) => !value)}
+          aria-label="打开类别筛选"
+        >
+          <SlidersHorizontal size={17} />
+          {hiddenCategoryCount > 0 && <span className="legend-count">+{hiddenCategoryCount}</span>}
+          <span className="tag-tooltip">类别筛选</span>
+        </button>
+        {isCategoryPanelOpen && (
+          <div className="category-popover">
+            <div className="category-popover-head">
+              <strong>类别筛选</strong>
+              <span>{activeCats.size}/{categoryKeys.length}</span>
+            </div>
+            <label className="category-search">
+              <Search size={15} />
+              <input value={categoryQuery} onChange={(event) => setCategoryQuery(event.target.value)} placeholder="搜索类别" />
+            </label>
+            <div className="category-actions">
+              <button type="button" onClick={selectAllCategories}>全选</button>
+              <button type="button" onClick={clearAllCategories}>清空</button>
+            </div>
+            <div className="category-list">
+              {filteredCategoryStats.map(({ key, count, meta }) => {
+                const Icon = meta.icon;
+                const active = activeCats.has(key);
+                return (
+                  <button
+                    key={key}
+                    type="button"
+                    className={active ? 'is-active' : ''}
+                    style={{ '--cat': meta.color }}
+                    onClick={() => toggleCategory(key)}
+                  >
+                    <span className="category-dot"><Icon size={14} /></span>
+                    <span>{meta.label}</span>
+                    <small>{count}</small>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
       </aside>
 
       {isPanelOpen && selectedNode && (

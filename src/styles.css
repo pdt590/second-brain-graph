@@ -371,6 +371,8 @@ button {
 }
 
 .search-box input {
+  min-width: 0;
+  flex: 1 1 auto;
   width: 100%;
   color: var(--text-main);
   background: transparent;
@@ -380,6 +382,26 @@ button {
 
 .search-box input::placeholder {
   color: var(--placeholder);
+}
+
+.search-clear {
+  display: grid;
+  flex: 0 0 auto;
+  width: 28px;
+  height: 28px;
+  place-items: center;
+  color: var(--text-muted);
+  background: var(--surface);
+  border: 1px solid var(--panel-border);
+  border-radius: 50%;
+  padding: 0;
+  transition: color .18s ease, background .18s ease, transform .18s ease;
+}
+
+.search-clear:hover {
+  color: var(--text-main);
+  background: var(--surface-strong);
+  transform: scale(1.04);
 }
 
 .theme-button,
@@ -491,6 +513,7 @@ button {
   z-index: 7;
   display: flex;
   gap: 10px;
+  max-width: min(620px, calc(100vw - 48px));
   padding: 10px;
   border-radius: 999px;
 }
@@ -551,10 +574,146 @@ button {
   box-shadow: 0 0 24px color-mix(in srgb, var(--cat), transparent 38%);
 }
 
+.legend-more {
+  color: var(--text-main);
+}
+
+.legend-count {
+  position: absolute;
+  right: -5px;
+  top: -5px;
+  display: grid;
+  min-width: 18px;
+  height: 18px;
+  place-items: center;
+  padding: 0 5px;
+  color: #041015;
+  background: #16f2b3;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 800;
+}
+
 .legend-dot:hover .tag-tooltip,
 .legend-dot:focus-visible .tag-tooltip {
   opacity: 1;
   transform: translate(-50%, 0);
+}
+
+.category-popover {
+  position: absolute;
+  left: 0;
+  bottom: calc(100% + 12px);
+  width: min(360px, calc(100vw - 48px));
+  max-height: min(520px, calc(100vh - 170px));
+  display: grid;
+  grid-template-rows: auto auto auto minmax(0, 1fr);
+  gap: 10px;
+  padding: 14px;
+  color: var(--text-main);
+  background: var(--panel-bg);
+  border: 1px solid var(--panel-border);
+  border-radius: 8px;
+  box-shadow: var(--panel-shadow);
+  backdrop-filter: blur(18px);
+}
+
+.category-popover-head,
+.category-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.category-popover-head strong {
+  font-size: 14px;
+}
+
+.category-popover-head span {
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.category-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 38px;
+  padding: 0 11px;
+  color: var(--text-muted);
+  background: var(--surface);
+  border: 1px solid var(--panel-border);
+  border-radius: 8px;
+}
+
+.category-search input {
+  min-width: 0;
+  flex: 1;
+  color: var(--text-main);
+  background: transparent;
+  border: 0;
+  outline: 0;
+}
+
+.category-actions button {
+  min-height: 30px;
+  padding: 0 10px;
+  color: var(--text-main);
+  background: var(--surface);
+  border: 1px solid var(--panel-border);
+  border-radius: 999px;
+  font-size: 12px;
+}
+
+.category-list {
+  display: grid;
+  gap: 6px;
+  overflow: auto;
+  padding-right: 2px;
+}
+
+.category-list button {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 9px;
+  min-height: 38px;
+  color: var(--text-soft);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  padding: 0 8px 0 5px;
+  text-align: left;
+}
+
+.category-list button:hover,
+.category-list button.is-active {
+  color: var(--text-main);
+  background: color-mix(in srgb, var(--cat), transparent 88%);
+  border-color: color-mix(in srgb, var(--cat), transparent 62%);
+}
+
+.category-dot {
+  display: grid;
+  width: 26px;
+  height: 26px;
+  place-items: center;
+  color: var(--cat);
+  background: var(--button-bg);
+  border: 1px solid color-mix(in srgb, var(--cat), transparent 42%);
+  border-radius: 50%;
+}
+
+.category-list span:nth-child(2) {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.category-list small {
+  color: var(--text-muted);
+  font-size: 11px;
 }
 
 .node-panel {
