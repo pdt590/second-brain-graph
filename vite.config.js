@@ -24,6 +24,9 @@ export default defineConfig(async ({ command }) => {
   if (wikiIndexer) await wikiIndexer.start();
 
   return {
+  build: {
+    chunkSizeWarningLimit: 800
+  },
   plugins: [
     react(),
     {

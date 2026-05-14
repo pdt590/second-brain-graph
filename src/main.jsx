@@ -1,8 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
-import ForceGraph2D from 'force-graph';
-import ForceGraph3D from '3d-force-graph';
-import * as THREE from 'three';
 import {
   ArrowUpRight,
   Bot,
@@ -189,7 +186,7 @@ function fitGraphView(graphInstance, graphData, mode, duration = 850) {
   );
 }
 
-function getNodeSpriteMaterial(color, state) {
+function getNodeSpriteMaterial(color, state, threeModule) {
   const key = `${color}-${state}`;
   if (nodeSpriteMaterialCache.has(key)) return nodeSpriteMaterialCache.get(key);
 
@@ -225,9 +222,9 @@ function getNodeSpriteMaterial(color, state) {
   ctx.stroke();
   ctx.globalAlpha = 1;
 
-  const texture = new THREE.CanvasTexture(canvas);
+  const texture = new threeModule.CanvasTexture(canvas);
   texture.needsUpdate = true;
-  const material = new THREE.SpriteMaterial({
+  const material = new threeModule.SpriteMaterial({
     map: texture,
     transparent: true,
     depthWrite: false
@@ -236,14 +233,14 @@ function getNodeSpriteMaterial(color, state) {
   return material;
 }
 
-function createNodeSprite(node, selectedNodeId, neighborsById) {
+function createNodeSprite(node, selectedNodeId, neighborsById, threeModule) {
   const cat = getCategoryMeta(node.category);
   const state = node.id === selectedNodeId
     ? 'selected'
     : neighborsById.get(selectedNodeId)?.has(node.id)
       ? 'neighbor'
       : 'normal';
-  const sprite = new THREE.Sprite(getNodeSpriteMaterial(cat.color, state));
+  const sprite = new threeModule.Sprite(getNodeSpriteMaterial(cat.color, state, threeModule));
   const size = state === 'selected' ? 30 : state === 'neighbor' ? 22 : 16;
   sprite.scale.set(size, size, 1);
   return sprite;
@@ -731,6 +728,7 @@ async function readNodeSourceSnippet(node, maxLength = 6000) {
 function App() {
   const graphHostRef = useRef();
   const fgRef = useRef();
+  const graphRuntimeRef = useRef({ mode: null, three: null });
   const didInitialFitRef = useRef(false);
   const [graphReady, setGraphReady] = useState(false);
   const [graphMode, setGraphMode] = useState(GRAPH_MODES.THREE_D);
@@ -1060,7 +1058,10 @@ function App() {
     const host = graphHostRef.current;
     if (!host) return undefined;
 
+    let cancelled = false;
+    let graphInstance;
     setGraphReady(false);
+    graphRuntimeRef.current = { mode: null, three: null };
     host.replaceChildren();
 
     if (graphMode === GRAPH_MODES.THREE_D && !hasWebGLSupport()) {
@@ -1069,83 +1070,98 @@ function App() {
       return undefined;
     }
 
-    let graphInstance;
-    try {
-      graphInstance = graphMode === GRAPH_MODES.THREE_D
-        ? new ForceGraph3D(host, {
-          controlType: 'orbit',
-          rendererConfig: {
-            alpha: true,
-            antialias: false,
-            powerPreference: 'high-performance'
-          }
-        })
-          .backgroundColor('rgba(0,0,0,0)')
-          .showNavInfo(false)
-          .enableNavigationControls(true)
-          .enableNodeDrag(true)
-          .cooldownTicks(90)
-          .d3AlphaDecay(0.024)
-          .d3VelocityDecay(0.26)
-          .nodeRelSize(4)
-          .nodeResolution(18)
-          .nodeLabel((node) => `${node.name}<br/><span>${getCategoryMeta(node.category).label}</span>`)
-          .onNodeDragEnd((node) => {
-            node.fx = node.x;
-            node.fy = node.y;
-            node.fz = node.z;
-          })
-          .showPointerCursor((node) => Boolean(node))
-        : new ForceGraph2D(host)
-          .backgroundColor('rgba(0,0,0,0)')
-          .cooldownTicks(80)
-          .d3AlphaDecay(0.018)
-          .d3VelocityDecay(0.22)
-          .nodeRelSize(6)
-          .nodePointerAreaPaint((node, color, ctx) => {
-            if (!Number.isFinite(node.x) || !Number.isFinite(node.y)) return;
-            ctx.fillStyle = color;
-            ctx.beginPath();
-            ctx.arc(node.x, node.y, 18, 0, 2 * Math.PI, false);
-            ctx.fill();
-          })
-          .showPointerCursor((node) => Boolean(node));
-    } catch {
-      if (graphMode === GRAPH_MODES.THREE_D) {
-        setGraphNotice('3D 图谱初始化失败，已切换到 2D 图谱。');
-        setGraphMode(GRAPH_MODES.TWO_D);
-      }
-      return undefined;
-    }
-
-    if (graphMode === GRAPH_MODES.THREE_D) {
-      const controls = graphInstance.controls?.();
-      if (controls) {
-        controls.rotateSpeed = 0.78;
-        controls.zoomSpeed = 0.92;
-        controls.panSpeed = 0.72;
-        controls.enableDamping = true;
-        controls.dampingFactor = 0.08;
-      }
-    }
-
-    fgRef.current = graphInstance;
-    setGraphReady(true);
-    graphHostRef.current?.focus({ preventScroll: true });
-
     const resize = () => {
+      if (!graphInstance) return;
       graphInstance
         .width(host.clientWidth || window.innerWidth)
         .height(host.clientHeight || window.innerHeight);
     };
-    resize();
-    window.addEventListener('resize', resize);
+
+    const initGraph = async () => {
+      try {
+        if (graphMode === GRAPH_MODES.THREE_D) {
+          const [{ default: ForceGraph3D }, threeModule] = await Promise.all([
+            import('3d-force-graph'),
+            import('three')
+          ]);
+          if (cancelled) return;
+          graphRuntimeRef.current = { mode: graphMode, three: threeModule };
+          graphInstance = new ForceGraph3D(host, {
+            controlType: 'orbit',
+            rendererConfig: {
+              alpha: true,
+              antialias: false,
+              powerPreference: 'high-performance'
+            }
+          })
+            .backgroundColor('rgba(0,0,0,0)')
+            .showNavInfo(false)
+            .enableNavigationControls(true)
+            .enableNodeDrag(true)
+            .cooldownTicks(90)
+            .d3AlphaDecay(0.024)
+            .d3VelocityDecay(0.26)
+            .nodeRelSize(4)
+            .nodeResolution(18)
+            .nodeLabel((node) => `${node.name}<br/><span>${getCategoryMeta(node.category).label}</span>`)
+            .onNodeDragEnd((node) => {
+              node.fx = node.x;
+              node.fy = node.y;
+              node.fz = node.z;
+            })
+            .showPointerCursor((node) => Boolean(node));
+
+          const controls = graphInstance.controls?.();
+          if (controls) {
+            controls.rotateSpeed = 0.78;
+            controls.zoomSpeed = 0.92;
+            controls.panSpeed = 0.72;
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.08;
+          }
+        } else {
+          const { default: ForceGraph2D } = await import('force-graph');
+          if (cancelled) return;
+          graphRuntimeRef.current = { mode: graphMode, three: null };
+          graphInstance = new ForceGraph2D(host)
+            .backgroundColor('rgba(0,0,0,0)')
+            .cooldownTicks(80)
+            .d3AlphaDecay(0.018)
+            .d3VelocityDecay(0.22)
+            .nodeRelSize(6)
+            .nodePointerAreaPaint((node, color, ctx) => {
+              if (!Number.isFinite(node.x) || !Number.isFinite(node.y)) return;
+              ctx.fillStyle = color;
+              ctx.beginPath();
+              ctx.arc(node.x, node.y, 18, 0, 2 * Math.PI, false);
+              ctx.fill();
+            })
+            .showPointerCursor((node) => Boolean(node));
+        }
+
+        fgRef.current = graphInstance;
+        setGraphReady(true);
+        graphHostRef.current?.focus({ preventScroll: true });
+        resize();
+        window.addEventListener('resize', resize);
+      } catch {
+        if (cancelled) return;
+        if (graphMode === GRAPH_MODES.THREE_D) {
+          setGraphNotice('3D 图谱初始化失败，已切换到 2D 图谱。');
+          setGraphMode(GRAPH_MODES.TWO_D);
+        }
+      }
+    };
+
+    initGraph();
 
     return () => {
+      cancelled = true;
       window.removeEventListener('resize', resize);
-      graphInstance._destructor();
+      graphInstance?._destructor();
       host.replaceChildren();
-      fgRef.current = null;
+      if (fgRef.current === graphInstance) fgRef.current = null;
+      graphRuntimeRef.current = { mode: null, three: null };
       setGraphReady(false);
     };
   }, [authUser, graphMode]);
@@ -1157,9 +1173,11 @@ function App() {
     const selectedNodeId = selectedNode?.id;
 
     if (graphMode === GRAPH_MODES.THREE_D) {
+      const threeModule = graphRuntimeRef.current.three;
+      if (!threeModule) return;
       graphInstance
         .graphData(filteredGraph)
-        .nodeThreeObject((node) => createNodeSprite(node, selectedNodeId, neighborsById))
+        .nodeThreeObject((node) => createNodeSprite(node, selectedNodeId, neighborsById, threeModule))
         .nodeThreeObjectExtend(false)
         .nodeOpacity(0.92)
         .linkColor((link) => linkTouchesNode(link, selectedNodeId)
