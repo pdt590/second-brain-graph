@@ -987,6 +987,7 @@ function App() {
         userText: `用户问题：${text}`,
         systemPrompt: [
           '你是 Second Brain 知识图谱中的 Hermes Agent。请基于当前节点、原文片段和邻近节点回答用户问题。回答要清晰、可读、偏知识沉淀，支持 Markdown。',
+          '当前是只读对话模式：不要创建、修改、删除任何文件，不要写入 llm-wiki，也不要调用会改变本地文件或知识库状态的工具。如果用户要求保存、写入或生成新 wiki 文件，请提醒用户使用界面中的“保存到 Wiki”按钮。',
           historyContext,
           '如果用户的问题与之前的讨论相关，请在此基础上继续深入，避免重复已给出的信息。'
         ].filter(Boolean).join('\n\n'),
@@ -1009,6 +1010,8 @@ function App() {
 
   const generateInsightFile = async (targetNode = selectedNode) => {
     if (isGeneratingInsight || isSending) return;
+    const confirmed = window.confirm('将允许 Hermes 调用工具，把本次对话写入 llm-wiki 生成新的 Markdown 文件。确认继续吗？');
+    if (!confirmed) return;
     setIsGeneratingInsight(true);
     setChatError('');
 
