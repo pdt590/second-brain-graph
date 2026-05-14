@@ -37,7 +37,7 @@ const categoryPalette = ['#16f2b3', '#45a8ff', '#ffcc4d', '#ff7a45', '#ff5d9e', 
 const HERMES_CHAT_COMPLETIONS_URL = '/api/hermes/v1/chat/completions';
 const HERMES_MODEL = 'hermes-agent';
 const GRAPH_MODES = { TWO_D: '2d', THREE_D: '3d' };
-const GRAPH_3D_CAMERA = { minDistance: 220, maxDistance: 760, padding: 1.18 };
+const GRAPH_3D_CAMERA = { minDistance: 260, maxDistance: 980, padding: 1.28 };
 const nodeSpriteMaterialCache = new Map();
 
 const categoryIcons = {
@@ -129,33 +129,35 @@ function finiteGraphNodes(graphData) {
   ));
 }
 
-function getGraphCenterAndSpan(nodes) {
-  const bounds = nodes.reduce((box, node) => ({
-    minX: Math.min(box.minX, node.x),
-    maxX: Math.max(box.maxX, node.x),
-    minY: Math.min(box.minY, node.y),
-    maxY: Math.max(box.maxY, node.y),
-    minZ: Math.min(box.minZ, node.z),
-    maxZ: Math.max(box.maxZ, node.z)
-  }), {
-    minX: Infinity,
-    maxX: -Infinity,
-    minY: Infinity,
-    maxY: -Infinity,
-    minZ: Infinity,
-    maxZ: -Infinity
-  });
+function getPercentile(sortedValues, percentile) {
+  if (!sortedValues.length) return 0;
+  const index = Math.min(sortedValues.length - 1, Math.max(0, Math.round((sortedValues.length - 1) * percentile)));
+  return sortedValues[index];
+}
+
+function getRobustGraphCenterAndSpan(nodes) {
+  const xs = nodes.map((node) => node.x).sort((a, b) => a - b);
+  const ys = nodes.map((node) => node.y).sort((a, b) => a - b);
+  const zs = nodes.map((node) => node.z).sort((a, b) => a - b);
+  const low = nodes.length > 24 ? 0.08 : 0;
+  const high = nodes.length > 24 ? 0.92 : 1;
+  const minX = getPercentile(xs, low);
+  const maxX = getPercentile(xs, high);
+  const minY = getPercentile(ys, low);
+  const maxY = getPercentile(ys, high);
+  const minZ = getPercentile(zs, low);
+  const maxZ = getPercentile(zs, high);
 
   return {
     center: {
-      x: (bounds.minX + bounds.maxX) / 2,
-      y: (bounds.minY + bounds.maxY) / 2,
-      z: (bounds.minZ + bounds.maxZ) / 2
+      x: getPercentile(xs, 0.5),
+      y: getPercentile(ys, 0.5),
+      z: getPercentile(zs, 0.5)
     },
     span: Math.max(
-      bounds.maxX - bounds.minX,
-      bounds.maxY - bounds.minY,
-      bounds.maxZ - bounds.minZ,
+      maxX - minX,
+      maxY - minY,
+      maxZ - minZ,
       1
     )
   };
@@ -174,7 +176,7 @@ function fitGraphView(graphInstance, graphData, mode, duration = 850) {
     return;
   }
 
-  const { center, span } = getGraphCenterAndSpan(nodes);
+  const { center, span } = getRobustGraphCenterAndSpan(nodes);
   const distance = Math.min(
     GRAPH_3D_CAMERA.maxDistance,
     Math.max(GRAPH_3D_CAMERA.minDistance, span * GRAPH_3D_CAMERA.padding)
@@ -1231,6 +1233,7 @@ function App() {
 
     if (!didInitialFitRef.current && filteredGraph.nodes.length) {
       didInitialFitRef.current = true;
+      if (graphMode === GRAPH_MODES.THREE_D) return;
       graphInstance.onEngineStop(() => {
         fitGraphView(graphInstance, filteredGraph, graphMode, 900);
         graphInstance.onEngineStop(() => {});
