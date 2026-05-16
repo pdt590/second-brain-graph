@@ -1,0 +1,16 @@
+node_modules
+dist
+.git
+.gitignore
+.vscode
+.idea
+*.md
+!DEPLOYMENT.md
+promo-video
+data
+logs
+.env
+.env.local
+.dockerignore
+Dockerfile
+docker-compose*.yml

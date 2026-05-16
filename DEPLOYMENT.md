@@ -192,3 +192,109 @@ tail -n 50 "$SECOND_BRAIN_APP_DIR/logs/server.log"
 ```
 
 `/api/graph` should return `401` without login. That is expected.
+
+## Docker Deployment
+
+Docker provides the fastest path from zero to running. No Node.js or nginx setup on the host is required — only Docker Engine and Docker Compose.
+
+### Quick Start
+
+```bash
+# 1. Copy and fill in environment variables
+cp docker.env.example .env
+# Edit .env — at minimum set HERMES_WIKI_DIR and API_SERVER_KEY
+
+# 2. Build and start
+docker compose up -d --build
+
+# 3. Check logs
+docker compose logs -f second-brain
+```
+
+The app will be available at `http://localhost:3030` (or the port set in `.env`).
+
+### Volume Layout
+
+| Container Path | Purpose | Persistence |
+|---|---|---|
+| `/wiki` | Wiki 知识库（只读） | 通过 `.env` 的 `HERMES_WIKI_DIR` 挂载宿主机目录 |
+| `/app/data` | `auth.json` + 聊天历史 | 命名卷 `second-brain-data`，容器重建后保留 |
+
+### Connecting to Hermes
+
+**Hermes on the same host:**
+
+```bash
+# Option A: Set the address explicitly
+HERMES_API_TARGET=http://host.docker.internal:8643
+
+# Option B: Mount Hermes .env for automatic key detection
+# Uncomment the volume line in docker-compose.yml:
+# - "${HOME}/.hermes/.env:/root/.hermes/.env:ro"
+```
+
+**Hermes in another Docker container on the same network:**
+
+```yaml
+# Add to docker-compose.yml under second-brain:
+networks:
+  - hermes-net
+
+# And at the bottom:
+networks:
+  hermes-net:
+    external: true
+
+# Then set:
+HERMES_API_TARGET=http://hermes-container:8643
+```
+
+### Behind Nginx (Optional)
+
+If you need TLS or want to run alongside other services, put nginx in front:
+
+```nginx
+server {
+  listen 443 ssl;
+  server_name your-domain.com;
+
+  ssl_certificate     /etc/ssl/certs/second-brain.pem;
+  ssl_certificate_key /etc/ssl/private/second-brain.key;
+
+  location / {
+    proxy_pass http://127.0.0.1:3030;
+    proxy_http_version 1.1;
+    proxy_set_header Host $host;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+    proxy_buffering off;
+    proxy_cache off;
+    proxy_read_timeout 300s;
+  }
+}
+```
+
+### Update Deploy
+
+```bash
+git pull
+docker compose up -d --build
+```
+
+Docker Compose detects the image change, rebuilds, and restarts with zero manual steps. The `second-brain-data` volume preserves all auth and chat history.
+
+### Troubleshooting
+
+```bash
+# View live logs
+docker compose logs -f second-brain
+
+# Enter the container shell
+docker compose exec second-brain sh
+
+# Verify wiki directory is mounted
+docker compose exec second-brain ls /wiki
+
+# Reset all data (destroys auth + chat history)
+docker compose down -v
+```

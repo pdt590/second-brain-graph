@@ -1,0 +1,29 @@
+services:
+  second-brain:
+    build: .
+    container_name: second-brain
+    restart: unless-stopped
+    ports:
+      - "${SECOND_BRAIN_PORT:-3030}:3030"
+    volumes:
+      # Wiki 知识库目录（只读挂载，容器内路径 /wiki）
+      - "${HERMES_WIKI_DIR:-./wiki}:/wiki:ro"
+      # 认证凭据和聊天历史持久化
+      - second-brain-data:/app/data
+      # 可选：挂载 Hermes .env 用于 API Key 自动探测
+      # - "${HOME}/.hermes/.env:/root/.hermes/.env:ro"
+    environment:
+      - HERMES_WIKI_DIR=/wiki
+      - SECOND_BRAIN_HOST=0.0.0.0
+      - SECOND_BRAIN_PORT=3030
+      - SECOND_BRAIN_ADMIN_USER=${SECOND_BRAIN_ADMIN_USER:-admin}
+      - SECOND_BRAIN_ADMIN_PASSWORD=${SECOND_BRAIN_ADMIN_PASSWORD:-}
+      - API_SERVER_KEY=${API_SERVER_KEY:-}
+      - HERMES_API_TARGET=${HERMES_API_TARGET:-}
+    # 如果 Hermes 也在同一 Docker 网络，可以通过服务名访问
+    # extra_hosts:
+    #   - "host.docker.internal:host-gateway"  # 访问宿主机上的 Hermes
+
+volumes:
+  second-brain-data:
+    driver: local
