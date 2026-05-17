@@ -172,6 +172,7 @@ function publicGraph(graph) {
 
 async function ingestMarkdown(filePath, wikiDir, nodes, addLink, assetFiles = []) {
   const raw = await readFile(filePath, 'utf8');
+  const stat = statSync(filePath);
   const { data, body } = parseFrontmatter(raw);
   const id = normalizeId(data.id || data.slug || relativeStem(filePath, wikiDir), wikiDir);
   const sourcePath = path.relative(wikiDir, filePath);
@@ -182,6 +183,7 @@ async function ingestMarkdown(filePath, wikiDir, nodes, addLink, assetFiles = []
     name: String(data.title || firstHeading(body) || titleFromId(id)),
     category: rootCategoryFromFile(filePath, wikiDir),
     summary: String(data.summary || data.description || summarize(body)),
+    date: inferNodeDate(data, filePath, sourcePath, stat),
     sourcePath,
     absolutePath: filePath,
     assetKind: getAssetKind(filePath),
@@ -206,6 +208,7 @@ async function ingestMarkdown(filePath, wikiDir, nodes, addLink, assetFiles = []
 }
 
 async function ingestJson(filePath, wikiDir, nodes, addLink) {
+  const stat = statSync(filePath);
   const parsed = JSON.parse(await readFile(filePath, 'utf8'));
   const entries = Array.isArray(parsed.nodes) ? parsed.nodes : [parsed];
 
@@ -216,6 +219,7 @@ async function ingestJson(filePath, wikiDir, nodes, addLink) {
       name: String(entry.name || entry.title || titleFromId(id)),
       category: rootCategoryFromFile(filePath, wikiDir),
       summary: String(entry.summary || entry.description || '此节点来自 llm-wiki，暂无摘要。'),
+      date: inferNodeDate(entry, filePath, path.relative(wikiDir, filePath), stat),
       sourcePath: path.relative(wikiDir, filePath),
       absolutePath: filePath,
       assetKind: getAssetKind(filePath),
@@ -237,6 +241,7 @@ function ingestRawAsset(filePath, wikiDir, nodes) {
     name: titleFromId(id),
     category: rootCategoryFromFile(filePath, wikiDir),
     summary: createAssetSummary(filePath, kind, stat.size),
+    date: inferNodeDate({}, filePath, path.relative(wikiDir, filePath), stat),
     sourcePath: path.relative(wikiDir, filePath),
     absolutePath: filePath,
     assetKind: kind,
@@ -465,6 +470,60 @@ function rootCategoryFromFile(filePath, wikiDir) {
   const relative = path.relative(wikiDir, filePath).replace(/\\/g, '/');
   const [root] = relative.split('/');
   return relative.includes('/') ? root : 'root';
+}
+
+function inferNodeDate(data = {}, filePath, sourcePath, fileStat = null) {
+  const frontmatterKeys = ['date', 'created', 'created_at', 'createdAt', 'updated', 'updated_at', 'updatedAt', 'published', 'published_at', 'publishedAt'];
+  for (const key of frontmatterKeys) {
+    const parsed = normalizeDateValue(data[key]);
+    if (parsed) return parsed;
+  }
+
+  const fromPath = extractDateFromText(`${sourcePath || ''} ${path.basename(filePath || '')}`);
+  if (fromPath) return fromPath;
+
+  const timestamp = Number.isFinite(fileStat?.birthtimeMs) && fileStat.birthtimeMs > 0
+    ? fileStat.birthtimeMs
+    : fileStat?.mtimeMs;
+  if (Number.isFinite(timestamp)) return toLocalDateString(new Date(timestamp));
+  return null;
+}
+
+function normalizeDateValue(value) {
+  if (!value) return null;
+  if (Array.isArray(value)) return normalizeDateValue(value[0]);
+  const text = String(value).trim();
+  if (!text) return null;
+  const direct = extractDateFromText(text);
+  if (direct) return direct;
+  const date = new Date(text);
+  if (!Number.isNaN(date.getTime())) return toLocalDateString(date);
+  return null;
+}
+
+function extractDateFromText(text) {
+  const dashed = String(text).match(/(?:^|[^\d])((?:19|20)\d{2})[-_./年]([01]\d)[-_./月]([0-3]\d)(?:日)?(?:$|[^\d])/);
+  if (dashed) return formatDateParts(dashed[1], dashed[2], dashed[3]);
+  const compact = String(text).match(/(?:^|[^\d])((?:19|20)\d{2})([01]\d)([0-3]\d)(?:$|[^\d])/);
+  if (compact) return formatDateParts(compact[1], compact[2], compact[3]);
+  return null;
+}
+
+function formatDateParts(year, month, day) {
+  const date = new Date(Date.UTC(Number(year), Number(month) - 1, Number(day)));
+  if (
+    date.getUTCFullYear() !== Number(year) ||
+    date.getUTCMonth() !== Number(month) - 1 ||
+    date.getUTCDate() !== Number(day)
+  ) return null;
+  return `${year}-${month}-${day}`;
+}
+
+function toLocalDateString(date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
 }
 
 function shouldIgnoreReference(id) {

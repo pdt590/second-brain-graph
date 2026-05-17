@@ -278,6 +278,7 @@ button {
 
 .brand,
 .search-box,
+.time-filter,
 .graph-mode-button,
 .theme-button,
 .restore-button,
@@ -416,6 +417,76 @@ button {
   color: var(--text-main);
   background: var(--surface-strong);
   transform: scale(1.04);
+}
+
+.time-filter {
+  pointer-events: auto;
+  position: absolute;
+  left: 50%;
+  top: 66px;
+  width: min(560px, calc(100vw - 760px));
+  min-height: 42px;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 10px;
+  color: var(--text-muted);
+  border-radius: 8px;
+}
+
+.time-filter label {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+  color: var(--text-muted);
+  font-size: 11px;
+}
+
+.time-filter input {
+  width: 124px;
+  min-width: 0;
+  color: var(--text-main);
+  background: var(--surface);
+  border: 1px solid var(--panel-border);
+  border-radius: 6px;
+  padding: 5px 7px;
+  color-scheme: dark;
+}
+
+.app-shell[data-theme="light"] .time-filter input {
+  color-scheme: light;
+}
+
+.time-filter-separator {
+  color: var(--text-muted);
+}
+
+.time-filter button {
+  display: grid;
+  width: 26px;
+  height: 26px;
+  place-items: center;
+  padding: 0;
+  color: var(--text-muted);
+  background: var(--surface);
+  border: 1px solid var(--panel-border);
+  border-radius: 50%;
+}
+
+.time-filter small {
+  flex: 0 0 auto;
+  color: var(--text-muted);
+  font-size: 11px;
+}
+
+.time-filter-count {
+  margin-left: auto;
+  padding: 2px 6px;
+  background: var(--surface);
+  border: 1px solid var(--panel-border);
+  border-radius: 999px;
 }
 
 .graph-mode-button,
@@ -1666,7 +1737,7 @@ button {
     top: calc(12px + env(safe-area-inset-top, 0px));
     left: 12px;
     right: 12px;
-    height: 112px;
+    height: 174px;
   }
 
   .brand {
@@ -1683,6 +1754,29 @@ button {
     top: 66px;
     width: 100%;
     min-width: 0;
+  }
+
+  .time-filter {
+    top: 124px;
+    left: 0;
+    right: 0;
+    width: auto;
+    transform: none;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .time-filter::-webkit-scrollbar {
+    display: none;
+  }
+
+  .time-filter label span,
+  .time-filter-count {
+    display: none;
+  }
+
+  .time-filter input {
+    width: 132px;
   }
 
   .graph-mode-button {

@@ -5,6 +5,7 @@ import {
   Bot,
   BookUp2,
   BrainCircuit,
+  CalendarDays,
   ChevronRight,
   CircleDot,
   Command,
@@ -589,6 +590,7 @@ function normalizeGraphData(data) {
       name: String(node.name || node.title || node.id),
       category: String(node.category || 'root'),
       summary: String(node.summary || node.description || '此节点来自 Hermes llm-wiki，暂无摘要。'),
+      date: typeof node.date === 'string' ? node.date : null,
       media: Array.isArray(node.media) ? node.media : [],
       sourcePath: node.sourcePath,
       asset: node.asset && typeof node.asset === 'object' ? node.asset : null,
@@ -729,6 +731,14 @@ async function readNodeSourceSnippet(node, maxLength = 6000) {
   }
 }
 
+function isNodeInDateRange(node, start, end) {
+  if (!start && !end) return true;
+  if (!node.date) return false;
+  if (start && node.date < start) return false;
+  if (end && node.date > end) return false;
+  return true;
+}
+
 function App() {
   const graphHostRef = useRef();
   const fgRef = useRef();
@@ -751,6 +761,7 @@ function App() {
   const [activeCats, setActiveCats] = useState(new Set());
   const [isCategoryPanelOpen, setIsCategoryPanelOpen] = useState(false);
   const [categoryQuery, setCategoryQuery] = useState('');
+  const [dateRange, setDateRange] = useState({ start: '', end: '' });
   const [quickCategoryLimit, setQuickCategoryLimit] = useState(() => getQuickCategoryLimit());
   const [isFull, setIsFull] = useState(false);
   const [isPanelOpen, setIsPanelOpen] = useState(false);
@@ -878,10 +889,13 @@ function App() {
 
   const filteredGraph = useMemo(() => {
     const normalized = query.trim().toLowerCase();
+    const start = dateRange.start || '';
+    const end = dateRange.end || '';
     const nodes = graph.nodes.filter((node) => {
       const categoryVisible = activeCats.has(node.category);
       const textVisible = !normalized || `${node.name} ${node.summary}`.toLowerCase().includes(normalized);
-      return categoryVisible && textVisible;
+      const dateVisible = isNodeInDateRange(node, start, end);
+      return categoryVisible && textVisible && dateVisible;
     });
     const nodeIds = new Set(nodes.map((node) => node.id));
     return {
@@ -892,7 +906,7 @@ function App() {
         return nodeIds.has(source) && nodeIds.has(target);
       })
     };
-  }, [activeCats, graph, query]);
+  }, [activeCats, dateRange.end, dateRange.start, graph, query]);
 
   const toggleCategory = (key) => {
     setActiveCats((current) => {
@@ -1454,6 +1468,39 @@ function App() {
             </button>
           )}
         </div>
+        <div className="time-filter" aria-label="时间过滤">
+          <CalendarDays size={17} aria-hidden="true" />
+          <label>
+            <span>开始</span>
+            <input
+              type="date"
+              value={dateRange.start}
+              max={dateRange.end || undefined}
+              onChange={(event) => setDateRange((current) => ({ ...current, start: event.target.value }))}
+              aria-label="开始日期"
+            />
+          </label>
+          <span className="time-filter-separator">-</span>
+          <label>
+            <span>结束</span>
+            <input
+              type="date"
+              value={dateRange.end}
+              min={dateRange.start || undefined}
+              onChange={(event) => setDateRange((current) => ({ ...current, end: event.target.value }))}
+              aria-label="结束日期"
+            />
+          </label>
+          {(dateRange.start || dateRange.end) && (
+            <button type="button" onClick={() => setDateRange({ start: '', end: '' })} aria-label="清除时间过滤">
+              <X size={14} />
+            </button>
+          )}
+          {!dateRange.start && !dateRange.end && <small>全部时间</small>}
+          <small className="time-filter-count" title="当前过滤后的节点数">
+            {filteredGraph.nodes.length}
+          </small>
+        </div>
         <button
           className={`graph-mode-button ${graphMode === GRAPH_MODES.THREE_D ? 'is-3d' : 'is-2d'}`}
           onClick={toggleGraphMode}
@@ -1828,6 +1875,7 @@ function NodePanel({ node, neighbors, isFull, onClose, onCloseFull, onFull, onFo
 
       <div className="node-meta">
         <span>{cat.label}</span>
+        {node.date && <span>{node.date}</span>}
         <span>{node.sourcePath || 'Generated reference'}</span>
       </div>
 
