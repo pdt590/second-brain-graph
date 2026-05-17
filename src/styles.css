@@ -769,11 +769,9 @@ button {
   inset: 0;
   z-index: 40;
   width: auto;
-  display: grid;
-  grid-template-columns: minmax(0, 1.24fr) minmax(320px, .76fr);
-  grid-template-rows: auto auto minmax(0, 1fr);
-  gap: 20px;
-  align-content: stretch;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
   overflow: auto;
   padding: 28px;
   border-radius: 0;
@@ -781,7 +779,7 @@ button {
 }
 
 .node-panel.is-full .panel-head {
-  grid-column: 1 / -1;
+  flex: 0 0 auto;
   min-height: 112px;
   align-items: flex-end;
   padding: 8px 112px 18px 0;
@@ -802,6 +800,7 @@ button {
 }
 
 .node-panel.is-full .summary,
+.node-panel.is-full .source-asset-gallery,
 .node-panel.is-full .neighbor-section,
 .node-panel.is-full .chat-popover {
   min-width: 0;
@@ -811,14 +810,64 @@ button {
   box-shadow: inset 0 0 30px rgba(255,255,255,.04);
 }
 
-.node-panel.is-full .summary {
-  grid-column: 1;
-  grid-row: 3;
-  overflow: auto;
+.node-panel.is-full .node-meta {
+  flex: 0 0 auto;
+  margin: 12px 0 16px;
+}
+
+/* Two-column content area for full view */
+.full-panel-body {
+  display: flex;
+  gap: 20px;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.full-column-left {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  flex: 1.24;
+  min-width: 0;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.full-column-left .summary {
+  flex: 0 0 auto;
+  min-height: min(56vh, 620px);
+  overflow: visible;
   padding: 24px;
   color: var(--text-soft);
   font-size: clamp(16px, 1.35vw, 20px);
   line-height: 1.85;
+}
+
+.full-column-left .source-asset-gallery.is-full {
+  flex: 0 0 auto;
+  overflow: visible;
+}
+
+.full-column-right {
+  flex: 0 0 min(38vw, 560px);
+  min-width: 0;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+/* When no left column, right column takes full width */
+.full-panel-body:not(:has(.full-column-left)) .full-column-right {
+  flex: 1;
+}
+
+.full-column-right .neighbor-section {
+  display: flex;
+  flex-direction: column;
+  padding: 18px;
+  min-height: 0;
+  height: auto;
+  flex: 1;
 }
 
 .node-panel.is-full .summary::before {
@@ -831,15 +880,18 @@ button {
   font-weight: 700;
 }
 
-.node-panel.is-full .neighbor-section {
-  grid-column: 2;
-  grid-row: 3;
-  overflow: auto;
-  padding: 18px;
+.node-panel.is-full .neighbor-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 8px;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  align-content: start;
 }
 
-.node-panel.is-full .neighbor-list {
-  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+.node-panel.is-full .neighbor-section .section-title {
+  flex: 0 0 auto;
 }
 
 .node-panel.is-full .neighbor-list button {
@@ -1144,6 +1196,157 @@ button {
 .empty-media {
   min-height: 74px;
   color: var(--text-muted);
+}
+
+.source-asset-gallery {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+}
+
+.source-asset-gallery.is-full {
+  min-width: 0;
+  padding: 16px;
+}
+
+.source-asset-gallery.is-full.is-primary {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.source-asset-list {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+}
+
+.source-asset-gallery.is-full.is-primary .source-asset-list,
+.source-asset-gallery.is-full.is-primary .source-asset {
+  min-height: 0;
+  height: 100%;
+}
+
+.source-asset {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+  padding: 14px;
+  color: var(--text-soft);
+  background: var(--surface);
+  border: 1px solid var(--panel-border);
+  border-radius: 8px;
+}
+
+.source-asset.is-full {
+  grid-template-rows: auto minmax(0, 1fr);
+  padding: 18px;
+  background: var(--fullscreen-card);
+  border-color: var(--fullscreen-border);
+}
+
+.source-asset-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  min-width: 0;
+}
+
+.source-asset-head > div:first-child {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.source-asset-head span {
+  color: color-mix(in srgb, var(--node-color), white 14%);
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 13px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.source-asset-head strong {
+  color: var(--text-main);
+  overflow-wrap: anywhere;
+}
+
+.source-asset-head small {
+  color: var(--text-muted);
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+
+.source-asset-actions {
+  display: flex;
+  flex: 0 0 auto;
+  gap: 8px;
+}
+
+.source-asset-actions a {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 34px;
+  padding: 0 10px;
+  color: var(--text-main);
+  text-decoration: none;
+  background: var(--surface-strong);
+  border: 1px solid var(--panel-border);
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.source-asset-preview {
+  min-height: 86px;
+  overflow: auto;
+  border-radius: 8px;
+}
+
+.source-asset:not(.is-full) .source-asset-preview {
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+.source-asset-preview img,
+.source-asset-preview video,
+.source-asset-preview iframe {
+  display: block;
+  width: 100%;
+  border: 0;
+  border-radius: 8px;
+  background: var(--field-bg);
+}
+
+.source-asset-preview img {
+  max-height: min(66vh, 720px);
+  object-fit: contain;
+}
+
+.source-asset-preview video,
+.source-asset-preview iframe {
+  height: min(66vh, 720px);
+}
+
+.source-asset-preview audio {
+  width: 100%;
+  margin-top: 8px;
+}
+
+.source-asset-preview pre {
+  min-height: 100%;
+  margin: 0;
+  padding: 16px;
+  overflow: auto;
+  color: var(--text-soft);
+  background: var(--field-bg);
+  border: 1px solid var(--panel-border);
+  border-radius: 8px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
 }
 
 .section-title {
@@ -1534,6 +1737,21 @@ button {
     border-radius: 0;
   }
 
+  .full-panel-body {
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .full-column-left,
+  .full-column-right {
+    flex: 1 1 auto;
+    min-height: 0;
+  }
+
+  .full-column-right .neighbor-section {
+    min-height: 200px;
+  }
+
   .node-panel.is-full .panel-head {
     min-height: 86px;
     padding: 6px 104px 14px 0;
@@ -1545,7 +1763,7 @@ button {
   }
 
   .node-panel.is-full .summary,
-  .node-panel.is-full .media-grid,
+  .node-panel.is-full .source-asset-gallery,
   .node-panel.is-full .neighbor-section,
   .node-panel.is-full .chat-console {
     width: 100%;

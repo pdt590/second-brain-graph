@@ -31,6 +31,7 @@ const server = http.createServer(async (request, response) => {
     if (url.pathname === '/api/chat/history') return handleChatHistory(request, response, url);
     if (url.pathname === '/api/chat/summary') return handleChatSummary(request, response, url);
     if (url.pathname === '/api/wiki/content') return sendWikiContent(url, response);
+    if (url.pathname === '/api/wiki/asset') return sendWikiAsset(url, response);
     if (url.pathname === '/api/wiki/events') return sendWikiEvents(request, response);
     if (url.pathname.startsWith('/api/hermes/')) return proxyHermes(request, response, url);
     return sendStatic(url, response);
@@ -51,6 +52,22 @@ async function sendWikiContent(url, response) {
   if (content == null) return sendJson(response, { error: 'Node content not found' }, 404);
   response.writeHead(200, { 'Content-Type': 'text/markdown; charset=utf-8', 'Cache-Control': 'no-store' });
   response.end(content);
+}
+
+async function sendWikiAsset(url, response) {
+  const id = url.searchParams.get('id');
+  if (!id) return sendJson(response, { error: 'Missing node id' }, 400);
+  const asset = await indexer.getNodeAsset(id);
+  if (!asset) return sendJson(response, { error: 'Source file not found' }, 404);
+  const disposition = url.searchParams.get('download') === '1' ? 'attachment' : 'inline';
+  response.writeHead(200, {
+    'Content-Type': asset.mimeType,
+    'Content-Length': asset.size,
+    'Content-Disposition': `${disposition}; filename*=UTF-8''${encodeURIComponent(asset.fileName)}`,
+    'Cache-Control': 'private, no-store',
+    'X-Content-Type-Options': 'nosniff'
+  });
+  createReadStream(asset.absolutePath).pipe(response);
 }
 
 async function handleChatHistory(request, response, url) {

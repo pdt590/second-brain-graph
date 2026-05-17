@@ -591,6 +591,8 @@ function normalizeGraphData(data) {
       summary: String(node.summary || node.description || '此节点来自 Hermes llm-wiki，暂无摘要。'),
       media: Array.isArray(node.media) ? node.media : [],
       sourcePath: node.sourcePath,
+      asset: node.asset && typeof node.asset === 'object' ? node.asset : null,
+      attachments: Array.isArray(node.attachments) ? node.attachments.filter((asset) => asset && typeof asset === 'object') : [],
       contentUrl: node.contentUrl
     }));
   const nodeIds = new Set(nodes.map((node) => node.id));
@@ -912,16 +914,14 @@ function App() {
   }, [graphMode]);
 
   const restoreGraph = useCallback(() => {
-    setQuery('');
-    setActiveCats(new Set(categoryKeys));
-    setSelectedId(graph.nodes[0]?.id ?? 'hermes-agent');
-    setIsFull(false);
-    setIsPanelOpen(false);
-    setChatNode(null);
+    const visibleNodeIds = new Set(filteredGraph.nodes.map((node) => node.id));
+    if (filteredGraph.nodes.length && selectedId && !visibleNodeIds.has(selectedId)) {
+      setSelectedId(filteredGraph.nodes[0].id);
+    }
     requestAnimationFrame(() => {
-      fitGraphView(fgRef.current, graph, graphMode, 850);
+      fitGraphView(fgRef.current, filteredGraph.nodes.length ? filteredGraph : graph, graphMode, 850);
     });
-  }, [categoryKeys, graph, graphMode]);
+  }, [filteredGraph, graph, graphMode, selectedId]);
 
   const toggleGraphMode = useCallback(() => {
     didInitialFitRef.current = false;
@@ -1466,7 +1466,7 @@ function App() {
         <button className="theme-button" onClick={toggleTheme} aria-label={theme === 'dark' ? '切换浅色模式' : '切换暗色模式'}>
           {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
         </button>
-        <button className="restore-button" onClick={restoreGraph} aria-label="恢复全图">
+        <button className="restore-button" onClick={restoreGraph} aria-label="适配当前图谱视图" title="适配当前图谱视图">
           <RotateCcw size={18} />
         </button>
         <div className="user-menu">
@@ -1774,6 +1774,9 @@ function NodePanel({ node, neighbors, isFull, onClose, onCloseFull, onFull, onFo
   const [sourceContent, setSourceContent] = useState('');
   const [sourceStatus, setSourceStatus] = useState('idle');
   const readableContent = isFull ? (sourceContent || node.summary) : node.summary;
+  const shouldShowArticle = !isFull || !node.asset || node.asset.previewType === 'markdown';
+  const attachments = Array.isArray(node.attachments) ? node.attachments : [];
+  const sourceAssets = node.asset ? [node.asset] : attachments;
 
   useEffect(() => {
     let cancelled = false;
@@ -1828,29 +1831,175 @@ function NodePanel({ node, neighbors, isFull, onClose, onCloseFull, onFull, onFo
         <span>{node.sourcePath || 'Generated reference'}</span>
       </div>
 
-      <article className={`summary ${isFull ? 'markdown-body' : ''}`}>
-        {sourceStatus === 'loading' ? '正在读取原文...' : (
-          isFull ? <MarkdownContent content={readableContent} /> : readableContent
-        )}
-        {sourceStatus === 'error' && <p>原文读取失败，当前显示摘要。</p>}
-      </article>
-
-      <section className="neighbor-section">
-        <div className="section-title">邻近节点</div>
-        <div className="neighbor-list">
-          {neighbors.map((neighbor) => {
-            const neighborCat = getCategoryMeta(neighbor.category);
-            return (
-              <button key={neighbor.id} onClick={() => onFocus(neighbor)} style={{ '--neighbor': neighborCat.color }}>
-                <span />
-                <strong>{neighbor.name}</strong>
-                <ChevronRight size={16} />
-              </button>
-            );
-          })}
+      {isFull ? (
+        <div className="full-panel-body">
+          {(shouldShowArticle || sourceAssets.length > 0) && (
+            <div className="full-column-left">
+              {shouldShowArticle && (
+                <article className="summary markdown-body">
+                  {sourceStatus === 'loading' ? '正在读取原文...' : (
+                    <MarkdownContent content={readableContent} />
+                  )}
+                  {sourceStatus === 'error' && <p>原文读取失败，当前显示摘要。</p>}
+                </article>
+              )}
+              {!shouldShowArticle && sourceStatus === 'loading' && (
+                <article className="summary markdown-body">正在读取原文...</article>
+              )}
+              {sourceAssets.length > 0 && (
+                <SourceAssetGallery
+                  assets={sourceAssets}
+                  isFull={isFull}
+                  title={node.asset ? '源文件' : '相关源文件'}
+                  variant={node.asset ? 'primary' : 'attachments'}
+                />
+              )}
+            </div>
+          )}
+          <div className="full-column-right">
+            <section className="neighbor-section">
+              <div className="section-title">邻近节点</div>
+              <div className="neighbor-list">
+                {neighbors.map((neighbor) => {
+                  const neighborCat = getCategoryMeta(neighbor.category);
+                  return (
+                    <button key={neighbor.id} onClick={() => onFocus(neighbor)} style={{ '--neighbor': neighborCat.color }}>
+                      <span />
+                      <strong>{neighbor.name}</strong>
+                      <ChevronRight size={16} />
+                    </button>
+                  );
+                })}
+              </div>
+            </section>
+          </div>
         </div>
-      </section>
+      ) : (
+        <>
+          {shouldShowArticle && (
+            <article className="summary">
+              {sourceStatus === 'loading' ? '正在读取原文...' : readableContent}
+              {sourceStatus === 'error' && <p>原文读取失败，当前显示摘要。</p>}
+            </article>
+          )}
+
+          {sourceAssets.length > 0 && (
+            <SourceAssetGallery
+              assets={sourceAssets}
+              isFull={isFull}
+              title={node.asset ? '源文件' : '相关源文件'}
+              variant={node.asset ? 'primary' : 'attachments'}
+            />
+          )}
+
+          <section className="neighbor-section">
+            <div className="section-title">邻近节点</div>
+            <div className="neighbor-list">
+              {neighbors.map((neighbor) => {
+                const neighborCat = getCategoryMeta(neighbor.category);
+                return (
+                  <button key={neighbor.id} onClick={() => onFocus(neighbor)} style={{ '--neighbor': neighborCat.color }}>
+                    <span />
+                    <strong>{neighbor.name}</strong>
+                    <ChevronRight size={16} />
+                  </button>
+                );
+              })}
+            </div>
+          </section>
+        </>
+      )}
     </PanelTag>
+  );
+}
+
+function SourceAssetGallery({ assets, isFull, title, variant }) {
+  if (!assets.length) return null;
+  return (
+    <section className={`source-asset-gallery ${isFull ? 'is-full' : ''} is-${variant}`}>
+      {!variant.includes('primary') && <div className="section-title">{title}</div>}
+      <div className="source-asset-list">
+        {assets.map((asset) => (
+          <SourceAssetPreview key={`${asset.url}-${asset.fileName}`} asset={asset} isFull={isFull} label={title} />
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function SourceAssetPreview({ asset, isFull, label = '源文件' }) {
+  const [textContent, setTextContent] = useState('');
+  const [textStatus, setTextStatus] = useState('idle');
+  const canInlineText = ['text', 'markdown'].includes(asset.previewType);
+
+  useEffect(() => {
+    let cancelled = false;
+    setTextContent('');
+    setTextStatus('idle');
+
+    if (!isFull || !canInlineText || !asset.url) return () => {
+      cancelled = true;
+    };
+
+    setTextStatus('loading');
+    fetch(asset.url, { cache: 'no-store' })
+      .then((response) => {
+        if (!response.ok) throw new Error('Unable to load source file');
+        return response.text();
+      })
+      .then((text) => {
+        if (cancelled) return;
+        setTextContent(asset.previewType === 'markdown' ? stripFrontmatter(text) : text);
+        setTextStatus('ready');
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setTextStatus('error');
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [asset.previewType, asset.url, canInlineText, isFull]);
+
+  const renderPreview = () => {
+    if (!isFull) return <p>最大化后可在节点内预览或下载这个文件。</p>;
+    if (asset.previewType === 'image') return <img src={asset.url} alt={asset.fileName} />;
+    if (asset.previewType === 'video') return <video src={asset.url} controls preload="metadata" />;
+    if (asset.previewType === 'audio') return <audio src={asset.url} controls preload="metadata" />;
+    if (asset.previewType === 'pdf') return <iframe src={asset.url} title={asset.fileName} />;
+    if (canInlineText) {
+      if (textStatus === 'loading') return <p>正在读取源文件...</p>;
+      if (textStatus === 'error') return <p>源文件预览失败，可以下载后查看。</p>;
+      if (asset.previewType === 'markdown') return <div className="markdown-body"><MarkdownContent content={textContent} /></div>;
+      return <pre>{textContent}</pre>;
+    }
+    return <p>这个文件类型暂不支持浏览器内预览，可以直接下载后查看。</p>;
+  };
+
+  return (
+    <section className={`source-asset ${isFull ? 'is-full' : ''}`}>
+      <div className="source-asset-head">
+        <div>
+          <span>{label}</span>
+          <strong>{asset.fileName}</strong>
+          <small>{asset.mimeType} · {asset.sizeLabel}</small>
+        </div>
+        <div className="source-asset-actions">
+          <a href={asset.url} target="_blank" rel="noreferrer" title="新窗口打开源文件">
+            <ArrowUpRight size={16} />
+            打开
+          </a>
+          <a href={asset.downloadUrl} download title="下载源文件">
+            <FileText size={16} />
+            下载
+          </a>
+        </div>
+      </div>
+      <div className="source-asset-preview">
+        {renderPreview()}
+      </div>
+    </section>
   );
 }
 
