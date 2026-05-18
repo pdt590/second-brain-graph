@@ -139,7 +139,6 @@ The server serves both the static frontend and all API routes from a single proc
 | `npm run build` | Build frontend for production |
 | `npm run preview` | Preview production build locally |
 | `npm run serve` | Run standalone Node.js production server |
-| `npm run generate:graph` | Generate static graph JSON (for debugging) |
 
 ## License
 

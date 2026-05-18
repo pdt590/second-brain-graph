@@ -40,13 +40,15 @@ function expandHome(value) {
   return String(value).replace(/^~(?=$|\/|\\)/, homedir());
 }
 
-export function createWikiGraphIndexer({ wikiDir = resolveWikiDir(), debounceMs = 450 } = {}) {
+export function createWikiGraphIndexer({ wikiDir = resolveWikiDir(), debounceMs = 450, pollMs = 15000 } = {}) {
   let graph = { nodes: [], links: [] };
   let nodesById = new Map();
   let version = 0;
   let rebuilding = null;
   let debounceTimer = null;
+  let pollTimer = null;
   let watcherCleanup = () => {};
+  let watcherRefreshing = null;
   const listeners = new Set();
 
   const notify = () => {
@@ -66,16 +68,42 @@ export function createWikiGraphIndexer({ wikiDir = resolveWikiDir(), debounceMs 
     return rebuilding;
   };
 
-  const scheduleRebuild = () => {
+  const scheduleRebuild = ({ refreshWatchers = true } = {}) => {
     clearTimeout(debounceTimer);
     debounceTimer = setTimeout(() => {
-      rebuild().catch((error) => console.error('[wiki-graph] rebuild failed:', error));
+      rebuild()
+        .then(() => {
+          if (refreshWatchers) return refreshWatchersAfterRebuild();
+          return null;
+        })
+        .catch((error) => console.error('[wiki-graph] rebuild failed:', error));
     }, debounceMs);
+  };
+
+  const refreshWatchersAfterRebuild = async () => {
+    if (watcherRefreshing) return watcherRefreshing;
+    watcherRefreshing = Promise.resolve()
+      .then(() => watcherCleanup())
+      .then(() => watchWiki(wikiDir, scheduleRebuild))
+      .then((cleanup) => {
+        watcherCleanup = cleanup;
+      })
+      .catch((error) => {
+        console.error('[wiki-graph] watcher refresh failed:', error);
+      })
+      .finally(() => {
+        watcherRefreshing = null;
+      });
+    return watcherRefreshing;
   };
 
   const start = async () => {
     await rebuild();
-    watcherCleanup = await watchWiki(wikiDir, scheduleRebuild);
+    await refreshWatchersAfterRebuild();
+    if (pollMs > 0) {
+      pollTimer = setInterval(() => scheduleRebuild({ refreshWatchers: false }), pollMs);
+      pollTimer.unref?.();
+    }
     return graph;
   };
 
@@ -113,6 +141,7 @@ export function createWikiGraphIndexer({ wikiDir = resolveWikiDir(), debounceMs 
     },
     close() {
       clearTimeout(debounceTimer);
+      if (pollTimer) clearInterval(pollTimer);
       watcherCleanup();
       listeners.clear();
     }
@@ -269,6 +298,9 @@ async function watchWiki(wikiDir, onChange) {
   const watchers = [];
   const addWatcher = (dir) => {
     const watcher = watch(dir, { persistent: false }, onChange);
+    watcher.on('error', (error) => {
+      console.warn(`[wiki-graph] watcher disabled for ${dir}: ${error.message}`);
+    });
     watchers.push(watcher);
   };
 

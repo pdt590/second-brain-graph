@@ -39,6 +39,7 @@ const HERMES_CHAT_COMPLETIONS_URL = '/api/hermes/v1/chat/completions';
 const HERMES_MODEL = 'hermes-agent';
 const GRAPH_MODES = { TWO_D: '2d', THREE_D: '3d' };
 const GRAPH_3D_CAMERA = { minDistance: 260, maxDistance: 980, padding: 1.28 };
+const EMPTY_GRAPH = { nodes: [], links: [] };
 const nodeSpriteMaterialCache = new Map();
 
 const categoryIcons = {
@@ -249,339 +250,8 @@ function createNodeSprite(node, selectedNodeId, neighborsById, threeModule) {
   return sprite;
 }
 
-const seedNodes = [
-  {
-    id: 'hermes-agent',
-    name: 'Hermes Agent',
-    category: 'agent',
-    summary: 'Hermes Agent 是 llm-wiki 的知识调度核心，负责把模型、工具、记忆、协议和用户目标组织成可推理的任务网络。',
-    media: [
-      { type: 'image', title: 'Agent Topology', url: makeTopologyImage() },
-      { type: 'link', title: 'React Force Graph Reference', url: 'https://vasturiano.github.io/react-force-graph/example/large-graph/' }
-    ]
-  },
-  {
-    id: 'llm-wiki',
-    name: 'LLM-Wiki',
-    category: 'dataset',
-    summary: 'LLM-Wiki 是面向大模型系统的结构化知识库，保存概念、实现、案例、评测与多媒体证据。',
-    media: [{ type: 'video', title: 'Knowledge Graph Motion', url: 'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4' }]
-  },
-  {
-    id: 'retrieval-planner',
-    name: 'Retrieval Planner',
-    category: 'tool',
-    summary: '检索规划器把用户问题拆成图谱遍历、向量召回、Web 证据和本地上下文读取等多个路径，并为每条路径生成可信度和成本预估。',
-    media: [{ type: 'image', title: 'Retrieval Plan', url: makeSignalImage('Retrieval Plan', '#ffcc4d') }]
-  },
-  {
-    id: 'long-memory',
-    name: 'Long Memory',
-    category: 'memory',
-    summary: '长期记忆层维护可复用的用户偏好、任务历史、项目事实和跨会话知识锚点。',
-    media: [{ type: 'audio', title: 'Memory Note', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3' }]
-  },
-  {
-    id: 'mcp',
-    name: 'MCP Interface',
-    category: 'protocol',
-    summary: 'MCP 为 Agent 提供标准化工具、资源和上下文接口，使不同数据源能够以统一方式进入推理链路。',
-    media: [{ type: 'link', title: 'MCP Resource Contract', url: '#' }]
-  },
-  {
-    id: 'tool-router',
-    name: 'Tool Router',
-    category: 'tool',
-    summary: '工具路由器根据任务目标、权限、成本和可靠性选择合适工具，并把结果回写到上下文。',
-    media: []
-  },
-  {
-    id: 'embedding-space',
-    name: 'Embedding Space',
-    category: 'model',
-    summary: '向量空间用于把节点内容、文档片段和查询意图映射到可比较的语义坐标中。',
-    media: []
-  },
-  {
-    id: 'evaluation-loop',
-    name: 'Evaluation Loop',
-    category: 'agent',
-    summary: '评测回路对生成结果进行事实性、覆盖度、工具使用和用户价值的持续检查。',
-    media: []
-  },
-  {
-    id: 'prompt-kernel',
-    name: 'Prompt Kernel',
-    category: 'model',
-    summary: 'Prompt Kernel 定义 Hermes Agent 的任务语气、约束、操作策略和知识图谱写入规则。',
-    media: []
-  },
-  {
-    id: 'graph-writeback',
-    name: 'Graph Writeback',
-    category: 'protocol',
-    summary: '图谱回写协议负责把对话中产生的新结论、草稿和证据转化为可审阅的新节点。',
-    media: []
-  },
-  {
-    id: 'context-composer',
-    name: 'Context Composer',
-    category: 'agent',
-    summary: '上下文编排器会把用户目标、当前节点、邻近节点、检索片段和系统约束压缩成一份可执行的上下文包，减少模型在长链路中丢失关键事实。',
-    media: [{ type: 'image', title: 'Context Pack', url: makeSignalImage('Context Pack', '#16f2b3') }]
-  },
-  {
-    id: 'rag-pipeline',
-    name: 'RAG Pipeline',
-    category: 'protocol',
-    summary: 'RAG Pipeline 定义从问题重写、召回、重排、证据裁剪到答案生成的标准流程，是 llm-wiki 把文档知识注入节点对话的主路径。',
-    media: [{ type: 'link', title: 'RAG Runbook', url: '#' }]
-  },
-  {
-    id: 'reranker',
-    name: 'Semantic Reranker',
-    category: 'model',
-    summary: '语义重排器会在向量召回之后重新评估候选内容与任务意图、当前节点和邻近节点的匹配度，优先保留可解释证据。',
-    media: []
-  },
-  {
-    id: 'chunking-policy',
-    name: 'Chunking Policy',
-    category: 'dataset',
-    summary: '切片策略记录文档拆分粒度、标题继承、表格保留和跨段引用规则，决定节点摘要是否能追溯到稳定证据。',
-    media: [{ type: 'image', title: 'Chunk Map', url: makeSignalImage('Chunk Map', '#ff7a45') }]
-  },
-  {
-    id: 'citation-engine',
-    name: 'Citation Engine',
-    category: 'tool',
-    summary: '引用引擎负责把回答中的结论绑定到文档片段、网页、节点历史和多媒体素材，避免生成内容成为无法审阅的孤立文本。',
-    media: []
-  },
-  {
-    id: 'knowledge-ingestion',
-    name: 'Knowledge Ingestion',
-    category: 'dataset',
-    summary: '知识摄取模块把 Markdown、PDF、网页、会议纪要和代码仓库转换成结构化节点，并提取摘要、实体、时间线和候选关系。',
-    media: [{ type: 'video', title: 'Ingestion Preview', url: 'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4' }]
-  },
-  {
-    id: 'entity-resolver',
-    name: 'Entity Resolver',
-    category: 'tool',
-    summary: '实体消歧器会合并同名概念、识别别名、保留来源差异，并把「LLM wiki」「llm-wiki」「知识库」这类表达映射到同一知识实体。',
-    media: []
-  },
-  {
-    id: 'schema-mapper',
-    name: 'Schema Mapper',
-    category: 'protocol',
-    summary: 'Schema Mapper 定义节点类型、边类型、摘要字段、多媒体字段和权限字段，让图谱既能被可视化，也能被 Agent 可靠读写。',
-    media: [{ type: 'link', title: 'Graph Schema Draft', url: '#' }]
-  },
-  {
-    id: 'edge-confidence',
-    name: 'Edge Confidence',
-    category: 'dataset',
-    summary: '边置信度用于表示两个节点关系的强弱、来源数量和更新时间；低置信关系会进入待审阅队列，高置信关系可直接参与推理。',
-    media: []
-  },
-  {
-    id: 'user-intent-model',
-    name: 'User Intent Model',
-    category: 'model',
-    summary: '用户意图模型将输入拆分为探索、验证、创作、对比、执行和回写等意图，并影响图谱扩展方式和面板中推荐的下一步操作。',
-    media: []
-  },
-  {
-    id: 'task-decomposer',
-    name: 'Task Decomposer',
-    category: 'agent',
-    summary: '任务分解器把复杂请求拆成图谱查询、工具调用、内容生成、事实校验和节点写入等步骤，并把执行状态同步到当前节点上下文。',
-    media: [{ type: 'image', title: 'Task Lattice', url: makeSignalImage('Task Lattice', '#16f2b3') }]
-  },
-  {
-    id: 'tool-permission',
-    name: 'Tool Permission Gate',
-    category: 'protocol',
-    summary: '工具权限闸门记录哪些操作只读、哪些操作会传输数据、哪些操作需要用户确认，从而让 Agent 的工具调用边界可见且可审计。',
-    media: []
-  },
-  {
-    id: 'browser-agent',
-    name: 'Browser Agent',
-    category: 'tool',
-    summary: 'Browser Agent 用于打开网页、读取页面、执行轻量交互和验证 UI 状态。它的输出会被转换成页面证据节点或操作日志节点。',
-    media: [{ type: 'link', title: 'Browser Trace', url: '#' }]
-  },
-  {
-    id: 'code-agent',
-    name: 'Code Agent',
-    category: 'tool',
-    summary: 'Code Agent 读取仓库、运行测试、编辑文件并生成补丁摘要；在 llm-wiki 中，它通常连接到设计节点、实现节点和验证节点。',
-    media: []
-  },
-  {
-    id: 'prompt-library',
-    name: 'Prompt Library',
-    category: 'dataset',
-    summary: 'Prompt Library 保存可复用的提示模板、失败案例和升级记录，帮助 Hermes Agent 在不同任务中保持稳定的行为边界。',
-    media: []
-  },
-  {
-    id: 'failure-memory',
-    name: 'Failure Memory',
-    category: 'memory',
-    summary: '失败记忆专门记录错误路径、无效工具、过期假设和用户纠正，用来降低 Agent 在相似任务中重复犯错的概率。',
-    media: [{ type: 'audio', title: 'Failure Review Note', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3' }]
-  },
-  {
-    id: 'session-memory',
-    name: 'Session Memory',
-    category: 'memory',
-    summary: '会话记忆保存当前任务的临时约束、用户刚刚做出的选择、打开的节点和未提交的新节点草稿，通常在任务结束后被压缩或丢弃。',
-    media: []
-  },
-  {
-    id: 'project-memory',
-    name: 'Project Memory',
-    category: 'memory',
-    summary: '项目记忆保存某个长期项目的架构偏好、命名习惯、关键文件、外部依赖和已做决策，是跨会话连续工作的基础。',
-    media: []
-  },
-  {
-    id: 'evaluation-dataset',
-    name: 'Evaluation Dataset',
-    category: 'dataset',
-    summary: '评测数据集包含黄金问题、反例、真实用户任务和多轮对话样本，用于检测图谱召回、节点摘要和生成节点的质量。',
-    media: [{ type: 'image', title: 'Eval Grid', url: makeSignalImage('Eval Grid', '#ff7a45') }]
-  },
-  {
-    id: 'quality-rubric',
-    name: 'Quality Rubric',
-    category: 'protocol',
-    summary: '质量量表定义事实性、可追溯性、覆盖度、新颖性、操作安全和用户价值等维度，作为节点写入和内容生成的评分标准。',
-    media: []
-  },
-  {
-    id: 'hallucination-guard',
-    name: 'Hallucination Guard',
-    category: 'model',
-    summary: '幻觉防护模块会标记低证据结论、要求补充引用、降低模型断言强度，并在必要时把问题转回检索或用户确认。',
-    media: []
-  },
-  {
-    id: 'multimodal-index',
-    name: 'Multimodal Index',
-    category: 'dataset',
-    summary: '多模态索引把图片、音频、视频和网页链接转换成可检索描述，并把素材与相关节点绑定，支持在节点面板中直接预览。',
-    media: [{ type: 'image', title: 'Media Index', url: makeSignalImage('Media Index', '#ff7a45') }]
-  },
-  {
-    id: 'audio-transcriber',
-    name: 'Audio Transcriber',
-    category: 'tool',
-    summary: '音频转写器会把语音笔记、访谈和会议录音转换成带时间戳的文本节点，再由实体消歧器抽取关系。',
-    media: [{ type: 'audio', title: 'Transcription Sample', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3' }]
-  },
-  {
-    id: 'video-summarizer',
-    name: 'Video Summarizer',
-    category: 'tool',
-    summary: '视频摘要器提取关键帧、章节、讲者观点和行动项，并把长视频压缩成可被图谱检索的多段摘要。',
-    media: [{ type: 'video', title: 'Video Summary Sample', url: 'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4' }]
-  },
-  {
-    id: 'node-chat',
-    name: 'Node Chat',
-    category: 'agent',
-    summary: 'Node Chat 是围绕单个节点展开的对话模式，会自动带入当前节点、邻近节点、证据片段和最近生成草稿，适合做深挖和改写。',
-    media: []
-  },
-  {
-    id: 'draft-review',
-    name: 'Draft Review Queue',
-    category: 'protocol',
-    summary: '草稿审阅队列保存由对话生成但尚未写入图谱的节点，用户可以选择接受、修改、合并或丢弃。',
-    media: []
-  },
-  {
-    id: 'timeline-builder',
-    name: 'Timeline Builder',
-    category: 'tool',
-    summary: '时间线构建器把节点中的日期、版本、决策和事件串联起来，帮助用户看到某个概念或项目如何演化。',
-    media: [{ type: 'image', title: 'Timeline Trace', url: makeSignalImage('Timeline Trace', '#ffcc4d') }]
-  }
-];
-
-const seedLinks = [
-  ['hermes-agent', 'llm-wiki'],
-  ['hermes-agent', 'retrieval-planner'],
-  ['hermes-agent', 'tool-router'],
-  ['hermes-agent', 'evaluation-loop'],
-  ['llm-wiki', 'embedding-space'],
-  ['llm-wiki', 'long-memory'],
-  ['retrieval-planner', 'embedding-space'],
-  ['retrieval-planner', 'mcp'],
-  ['tool-router', 'mcp'],
-  ['tool-router', 'graph-writeback'],
-  ['long-memory', 'prompt-kernel'],
-  ['prompt-kernel', 'hermes-agent'],
-  ['evaluation-loop', 'graph-writeback'],
-  ['graph-writeback', 'llm-wiki'],
-  ['hermes-agent', 'context-composer'],
-  ['context-composer', 'retrieval-planner'],
-  ['context-composer', 'prompt-kernel'],
-  ['context-composer', 'node-chat'],
-  ['llm-wiki', 'knowledge-ingestion'],
-  ['llm-wiki', 'schema-mapper'],
-  ['llm-wiki', 'multimodal-index'],
-  ['knowledge-ingestion', 'chunking-policy'],
-  ['knowledge-ingestion', 'entity-resolver'],
-  ['knowledge-ingestion', 'timeline-builder'],
-  ['chunking-policy', 'embedding-space'],
-  ['embedding-space', 'rag-pipeline'],
-  ['rag-pipeline', 'retrieval-planner'],
-  ['rag-pipeline', 'reranker'],
-  ['reranker', 'citation-engine'],
-  ['citation-engine', 'quality-rubric'],
-  ['citation-engine', 'hallucination-guard'],
-  ['schema-mapper', 'edge-confidence'],
-  ['schema-mapper', 'graph-writeback'],
-  ['edge-confidence', 'evaluation-loop'],
-  ['user-intent-model', 'task-decomposer'],
-  ['task-decomposer', 'tool-router'],
-  ['task-decomposer', 'node-chat'],
-  ['tool-router', 'tool-permission'],
-  ['tool-permission', 'browser-agent'],
-  ['tool-permission', 'code-agent'],
-  ['browser-agent', 'citation-engine'],
-  ['code-agent', 'evaluation-loop'],
-  ['long-memory', 'session-memory'],
-  ['long-memory', 'project-memory'],
-  ['long-memory', 'failure-memory'],
-  ['project-memory', 'prompt-library'],
-  ['failure-memory', 'quality-rubric'],
-  ['session-memory', 'node-chat'],
-  ['evaluation-loop', 'evaluation-dataset'],
-  ['evaluation-dataset', 'quality-rubric'],
-  ['quality-rubric', 'draft-review'],
-  ['hallucination-guard', 'evaluation-loop'],
-  ['multimodal-index', 'audio-transcriber'],
-  ['multimodal-index', 'video-summarizer'],
-  ['audio-transcriber', 'knowledge-ingestion'],
-  ['video-summarizer', 'knowledge-ingestion'],
-  ['node-chat', 'draft-review'],
-  ['draft-review', 'graph-writeback'],
-  ['timeline-builder', 'edge-confidence']
-].map(([source, target]) => ({ source, target }));
-
-function buildGraph(extraNodes = [], extraLinks = []) {
-  return { nodes: [...seedNodes, ...extraNodes], links: [...seedLinks, ...extraLinks] };
-}
-
 function normalizeGraphData(data) {
-  if (!data || !Array.isArray(data.nodes) || !Array.isArray(data.links) || !data.nodes.length) return null;
+  if (!data || !Array.isArray(data.nodes) || !Array.isArray(data.links)) return null;
 
   const nodes = data.nodes
     .filter((node) => node?.id)
@@ -607,63 +277,6 @@ function normalizeGraphData(data) {
     .map((link) => ({ source: String(link.source), target: String(link.target) }));
 
   return { nodes, links };
-}
-
-function makeTopologyImage() {
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 506">
-    <defs>
-      <radialGradient id="g" cx="50%" cy="50%" r="62%">
-        <stop offset="0" stop-color="#16f2b3" stop-opacity=".9"/>
-        <stop offset=".45" stop-color="#45a8ff" stop-opacity=".32"/>
-        <stop offset="1" stop-color="#050b12"/>
-      </radialGradient>
-      <filter id="glow"><feGaussianBlur stdDeviation="6" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
-    </defs>
-    <rect width="900" height="506" fill="#050b12"/>
-    <path d="M0 90h900M0 180h900M0 270h900M0 360h900M0 450h900M90 0v506M180 0v506M270 0v506M360 0v506M450 0v506M540 0v506M630 0v506M720 0v506M810 0v506" stroke="#6ae7ff" stroke-opacity=".08"/>
-    <circle cx="450" cy="253" r="210" fill="url(#g)" opacity=".72"/>
-    <g filter="url(#glow)" stroke-linecap="round" stroke-width="3">
-      <path d="M450 253 260 170 320 350 560 360 655 188 450 253 320 350M260 170 655 188M560 360 450 253" fill="none" stroke="#b9f8ff" stroke-opacity=".44"/>
-      <circle cx="450" cy="253" r="42" fill="#16f2b3"/>
-      <circle cx="260" cy="170" r="22" fill="#45a8ff"/>
-      <circle cx="320" cy="350" r="25" fill="#ff7a45"/>
-      <circle cx="560" cy="360" r="24" fill="#ff5d9e"/>
-      <circle cx="655" cy="188" r="27" fill="#ffcc4d"/>
-    </g>
-    <text x="450" y="265" text-anchor="middle" font-family="Rajdhani,Arial" font-size="36" font-weight="700" fill="#041015">H</text>
-  </svg>`;
-  return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
-}
-
-function makeSignalImage(title, color) {
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 506">
-    <defs>
-      <linearGradient id="bg" x1="0" x2="1" y1="0" y2="1">
-        <stop offset="0" stop-color="#06111d"/>
-        <stop offset=".52" stop-color="#091827"/>
-        <stop offset="1" stop-color="#02050a"/>
-      </linearGradient>
-      <radialGradient id="pulse" cx="50%" cy="48%" r="54%">
-        <stop offset="0" stop-color="${color}" stop-opacity=".78"/>
-        <stop offset=".42" stop-color="${color}" stop-opacity=".22"/>
-        <stop offset="1" stop-color="${color}" stop-opacity="0"/>
-      </radialGradient>
-      <filter id="soft"><feGaussianBlur stdDeviation="5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
-    </defs>
-    <rect width="900" height="506" fill="url(#bg)"/>
-    <path d="M0 96h900M0 192h900M0 288h900M0 384h900M120 0v506M240 0v506M360 0v506M480 0v506M600 0v506M720 0v506" stroke="#d9f7ff" stroke-opacity=".07"/>
-    <circle cx="450" cy="245" r="224" fill="url(#pulse)"/>
-    <g filter="url(#soft)" fill="none" stroke="${color}" stroke-width="4" stroke-linecap="round" stroke-opacity=".9">
-      <path d="M190 320c80-150 160 65 260-70s160-62 260-8"/>
-      <path d="M230 230c58-38 108-54 170-10s117 74 196-8"/>
-      <circle cx="190" cy="320" r="12" fill="${color}"/>
-      <circle cx="450" cy="250" r="18" fill="${color}"/>
-      <circle cx="710" cy="242" r="12" fill="${color}"/>
-    </g>
-    <text x="52" y="78" font-family="Rajdhani,Arial" font-size="48" font-weight="700" fill="#eef9ff">${title}</text>
-    <text x="54" y="122" font-family="Sora,Arial" font-size="20" fill="#a9c9d8">Hermes Agent llm-wiki simulated artifact</text>
-  </svg>`;
-  return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
 }
 
 function extractHermesContent(data) {
@@ -757,8 +370,9 @@ function App() {
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [isPasswordOpen, setIsPasswordOpen] = useState(false);
   const [query, setQuery] = useState('');
-  const [selectedId, setSelectedId] = useState('hermes-agent');
+  const [selectedId, setSelectedId] = useState('');
   const [activeCats, setActiveCats] = useState(new Set());
+  const previousCategoryKeysRef = useRef(new Set());
   const [isCategoryPanelOpen, setIsCategoryPanelOpen] = useState(false);
   const [categoryQuery, setCategoryQuery] = useState('');
   const [dateRange, setDateRange] = useState({ start: '', end: '' });
@@ -774,15 +388,7 @@ function App() {
   const [chatError, setChatError] = useState('');
   const [wikiGraph, setWikiGraph] = useState(null);
   const [graphStatus, setGraphStatus] = useState('idle');
-  const [extraNodes, setExtraNodes] = useState([]);
-  const [extraLinks, setExtraLinks] = useState([]);
-  const graph = useMemo(() => {
-    const baseGraph = wikiGraph ?? { nodes: [], links: [] };
-    return {
-      nodes: [...baseGraph.nodes, ...extraNodes],
-      links: [...baseGraph.links, ...extraLinks]
-    };
-  }, [extraLinks, extraNodes, wikiGraph]);
+  const graph = wikiGraph ?? EMPTY_GRAPH;
   const categoryKeys = useMemo(() => [...new Set(graph.nodes.map((node) => node.category || 'root'))].sort(), [graph.nodes]);
   const categoryStats = useMemo(() => {
     const counts = new Map();
@@ -806,7 +412,19 @@ function App() {
     : [];
 
   useEffect(() => {
-    setActiveCats(new Set(categoryKeys));
+    setActiveCats((current) => {
+      const nextKeys = new Set(categoryKeys);
+      const previousKeys = previousCategoryKeysRef.current;
+      previousCategoryKeysRef.current = nextKeys;
+
+      if (!previousKeys.size) return new Set(nextKeys);
+
+      const next = new Set([...current].filter((key) => nextKeys.has(key)));
+      for (const key of nextKeys) {
+        if (!previousKeys.has(key)) next.add(key);
+      }
+      return next;
+    });
   }, [categoryKeys.join('|')]);
 
   useEffect(() => {
@@ -1046,10 +664,10 @@ function App() {
         const normalized = normalizeGraphData(data);
         if (cancelled || !normalized) return;
         setWikiGraph(normalized);
-        setSelectedId(normalized.nodes[0]?.id ?? 'hermes-agent');
+        setSelectedId(normalized.nodes[0]?.id ?? '');
         setIsPanelOpen(false);
         didInitialFitRef.current = false;
-        setGraphStatus('ready');
+        setGraphStatus(normalized.nodes.length ? 'ready' : 'empty');
       })
       .catch(() => {
         if (cancelled) return;
@@ -1544,6 +1162,7 @@ function App() {
 
       {graphStatus === 'loading' && <div className="graph-status">正在加载第二大脑图谱...</div>}
       {graphStatus === 'error' && <div className="graph-status">图谱加载失败，请检查服务端 llm-wiki 配置。</div>}
+      {graphStatus === 'empty' && <div className="graph-status">当前 wiki 没有可显示节点，请检查 HERMES_WIKI_DIR 或添加 Markdown / 文档文件。</div>}
       {graphNotice && <div className="graph-mode-status">{graphNotice}</div>}
 
       <aside className="legend-dock" aria-label="Knowledge categories">

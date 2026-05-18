@@ -3,8 +3,7 @@
     "dev": "vite --host 0.0.0.0",
     "build": "vite build",
     "preview": "vite preview --host 0.0.0.0",
-    "serve": "node server/second-brain-server.mjs",
-    "generate:graph": "node scripts/generate-graph-data.mjs"
+    "serve": "node server/second-brain-server.mjs"
   },
   "dependencies": {
     "@vitejs/plugin-react": "latest",
