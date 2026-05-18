@@ -148,10 +148,6 @@ export function createWikiGraphIndexer({ wikiDir = resolveWikiDir(), debounceMs 
   };
 }
 
-export function toPublicGraph(graph) {
-  return publicGraph(graph);
-}
-
 export async function buildGraphFromWiki(wikiDir) {
   const files = await walk(wikiDir);
   const assetFiles = files.filter((filePath) => RAW_ASSET_EXTENSIONS.has(path.extname(filePath).toLowerCase()));

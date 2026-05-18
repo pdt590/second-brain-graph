@@ -1,5 +1,6 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
+import { createReadStream } from 'node:fs';
 import { createAuth } from './server/auth.mjs';
 import { readChatHistory, summarizeChatHistory, writeChatHistory } from './server/chat-history.mjs';
 import { detectHermesTarget, loadRuntimeEnv } from './server/runtime-config.mjs';
@@ -13,7 +14,6 @@ async function readDevJsonBody(request) {
 
 const hermesEnv = loadRuntimeEnv();
 const hermesResolvedApiKey = hermesEnv.API_SERVER_KEY || '';
-const hermesBaseUrl = '/api/hermes/v1';
 
 export default defineConfig(async ({ command }) => {
   const hermesTarget = await detectHermesTarget(hermesEnv);
@@ -89,6 +89,24 @@ export default defineConfig(async ({ command }) => {
           response.setHeader('Cache-Control', 'no-store');
           response.end(content);
         });
+        server.middlewares.use('/api/wiki/asset', async (request, response) => {
+          const url = new URL(request.url || '', 'http://localhost');
+          const asset = await wikiIndexer.getNodeAsset(url.searchParams.get('id') || '');
+          if (!asset) {
+            response.statusCode = 404;
+            response.end('Source file not found');
+            return;
+          }
+          const disposition = url.searchParams.get('download') === '1' ? 'attachment' : 'inline';
+          response.writeHead(200, {
+            'Content-Type': asset.mimeType,
+            'Content-Length': asset.size,
+            'Content-Disposition': `${disposition}; filename*=UTF-8''${encodeURIComponent(asset.fileName)}`,
+            'Cache-Control': 'private, no-store',
+            'X-Content-Type-Options': 'nosniff'
+          });
+          createReadStream(asset.absolutePath).pipe(response);
+        });
         server.middlewares.use('/api/wiki/events', (request, response) => {
           response.writeHead(200, {
             'Content-Type': 'text/event-stream',
@@ -100,15 +118,6 @@ export default defineConfig(async ({ command }) => {
             response.write(`event: graph-update\ndata: ${JSON.stringify({ version })}\n\n`);
           });
           request.on('close', unsubscribe);
-        });
-        server.middlewares.use('/api/hermes/config', (_request, response) => {
-          response.setHeader('Content-Type', 'application/json');
-          response.end(JSON.stringify({
-            baseUrl: hermesBaseUrl,
-            target: hermesTarget,
-            hasApiKey: Boolean(hermesResolvedApiKey),
-            apiKey: hermesResolvedApiKey
-          }));
         });
       }
     }
