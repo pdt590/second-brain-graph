@@ -5,26 +5,43 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createAuth, sendJson } from './auth.mjs';
 import { readChatHistory, summarizeChatHistory, writeChatHistory } from './chat-history.mjs';
-import { getHermesConfig, loadRuntimeEnv } from './runtime-config.mjs';
+import { createEmbeddedHermesManager } from './embedded-hermes-manager.mjs';
+import { ensureProductRuntimeEnv, getHermesConfig, isProductMode, loadRuntimeEnv } from './runtime-config.mjs';
 import { createWikiGraphIndexer, resolveWikiDir } from './wiki-graph-indexer.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const rootDir = path.resolve(__dirname, '..');
 const distDir = path.join(rootDir, 'dist');
 const env = loadRuntimeEnv({ rootDir });
+ensureProductRuntimeEnv({ rootDir, env });
 const port = Number(env.SECOND_BRAIN_PORT || 3030);
 const host = env.SECOND_BRAIN_HOST || '127.0.0.1';
+const stateRootDir = isProductMode(env) ? env.SECOND_BRAIN_PRODUCT_HOME : rootDir;
 const wikiDir = resolveWikiDir(env);
 const indexer = createWikiGraphIndexer({ wikiDir });
-const auth = await createAuth({ rootDir, env });
+const auth = await createAuth({ rootDir: stateRootDir, env });
+const hermesManager = createEmbeddedHermesManager({ rootDir, env });
 
+await hermesManager.start();
 await indexer.start();
 console.log(`[second-brain] wiki dir: ${wikiDir}`);
+if (isProductMode(env)) {
+  console.log(`[second-brain] product home: ${env.SECOND_BRAIN_PRODUCT_HOME}`);
+  console.log(`[second-brain] embedded Hermes target: ${env.HERMES_API_TARGET}`);
+}
 
 const server = http.createServer(async (request, response) => {
   try {
     const url = new URL(request.url, `http://${request.headers.host || 'localhost'}`);
 
+    if (url.pathname === '/api/health') {
+      return sendJson(response, {
+        ok: true,
+        productMode: isProductMode(env),
+        wikiDir,
+        hermesTarget: env.HERMES_API_TARGET || ''
+      });
+    }
     if (url.pathname.startsWith('/api/auth/')) return auth.handle(request, response, url);
     if (url.pathname.startsWith('/api/') && !auth.getSessionUser(request)) return sendJson(response, { error: 'Unauthorized' }, 401);
     if (url.pathname === '/api/graph') return sendJson(response, await indexer.getGraph());
@@ -74,14 +91,14 @@ async function handleChatHistory(request, response, url) {
   if (request.method === 'GET') {
     const nodeId = url.searchParams.get('nodeId');
     if (!nodeId) return sendJson(response, { error: 'Missing nodeId' }, 400);
-    return sendJson(response, { messages: await readChatHistory(rootDir, nodeId) });
+    return sendJson(response, { messages: await readChatHistory(stateRootDir, nodeId) });
   }
 
   if (request.method === 'PUT') {
     const body = await readJsonBody(request);
     if (!body.nodeId) return sendJson(response, { error: 'Missing nodeId' }, 400);
     const messages = Array.isArray(body.messages) ? body.messages : [];
-    await writeChatHistory(rootDir, body.nodeId, messages);
+    await writeChatHistory(stateRootDir, body.nodeId, messages);
     return sendJson(response, { ok: true });
   }
 
@@ -93,7 +110,7 @@ async function handleChatSummary(request, response, url) {
   const nodeId = url.searchParams.get('nodeId');
   if (!nodeId) return sendJson(response, { error: 'Missing nodeId' }, 400);
 
-  return sendJson(response, summarizeChatHistory(nodeId, await readChatHistory(rootDir, nodeId)));
+  return sendJson(response, summarizeChatHistory(nodeId, await readChatHistory(stateRootDir, nodeId)));
 }
 
 async function readJsonBody(request) {
@@ -156,3 +173,13 @@ function contentType(filePath) {
   if (ext === '.json') return 'application/json; charset=utf-8';
   return 'application/octet-stream';
 }
+
+function shutdown() {
+  indexer.close();
+  hermesManager.stop();
+  server.close(() => process.exit(0));
+  setTimeout(() => process.exit(0), 1000).unref?.();
+}
+
+process.once('SIGINT', shutdown);
+process.once('SIGTERM', shutdown);

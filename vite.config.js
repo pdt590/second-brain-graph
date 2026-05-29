@@ -3,7 +3,7 @@ import react from '@vitejs/plugin-react';
 import { createReadStream } from 'node:fs';
 import { createAuth } from './server/auth.mjs';
 import { readChatHistory, summarizeChatHistory, writeChatHistory } from './server/chat-history.mjs';
-import { detectHermesTarget, loadRuntimeEnv } from './server/runtime-config.mjs';
+import { detectHermesTarget, ensureProductRuntimeEnv, loadRuntimeEnv } from './server/runtime-config.mjs';
 import { createWikiGraphIndexer, resolveWikiDir } from './server/wiki-graph-indexer.mjs';
 
 async function readDevJsonBody(request) {
@@ -12,7 +12,7 @@ async function readDevJsonBody(request) {
   return body ? JSON.parse(body) : {};
 }
 
-const hermesEnv = loadRuntimeEnv();
+const hermesEnv = ensureProductRuntimeEnv({ env: loadRuntimeEnv() });
 const hermesResolvedApiKey = hermesEnv.API_SERVER_KEY || '';
 
 export default defineConfig(async ({ command }) => {

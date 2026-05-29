@@ -111,6 +111,25 @@ SECOND_BRAIN_HOST=0.0.0.0 npm run serve
 
 The server serves both the static frontend and all API routes from a single process on port 3030.
 
+### Option 5: Product Mode / Bundled Runtime
+
+Product mode is the foundation for a standalone offline installer that bundles Hermes and a private `llm-wiki` directory. It does not read or auto-detect the user's existing `~/.hermes` setup.
+
+```bash
+npm run build
+npm run serve:product
+```
+
+See [PRODUCT_MODE.md](PRODUCT_MODE.md) for the bundled runtime layout and installer contract.
+
+To create the Windows offline product package after adding local release-only Node and Hermes runtime files under the gitignored `runtime/` directory:
+
+```bash
+npm run package:windows-product
+```
+
+Upload the generated package from `release/` as a GitHub Release artifact; do not commit bundled runtime binaries to the source repository.
+
 ## Environment Variables
 
 | Variable | Default | Description |

@@ -5,6 +5,10 @@ public/wiki-source
 public/wiki-media
 .env
 data/
+runtime/
 promo-video-v2/
+promo-video/
 projects/
 release/
+operation-card-*/
+smart-*-video/

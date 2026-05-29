@@ -3,6 +3,7 @@ import { readFile, readdir } from 'node:fs/promises';
 import { homedir } from 'node:os';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
+import { isProductMode, resolveProductPaths } from './runtime-config.mjs';
 
 const DOCUMENT_EXTENSIONS = new Set(['.md', '.mdx', '.json']);
 const RAW_ASSET_EXTENSIONS = new Set([
@@ -18,6 +19,11 @@ const RAW_ASSET_EXTENSION_PATTERN = [...RAW_ASSET_EXTENSIONS]
 const IGNORED_DIRS = new Set(['.git', '.obsidian', 'node_modules', '.trash']);
 
 export function resolveWikiDir(env = process.env) {
+  if (isProductMode(env)) {
+    const paths = resolveProductPaths({ env });
+    return path.resolve(expandHome(env.HERMES_WIKI_DIR) || paths.wikiDir);
+  }
+
   const candidates = [
     expandHome(env.HERMES_WIKI_DIR),
     path.join(homedir(), '.hermes', 'llm-wiki'),

@@ -3,7 +3,9 @@
     "dev": "vite --host 0.0.0.0",
     "build": "vite build",
     "preview": "vite preview --host 0.0.0.0",
-    "serve": "node server/second-brain-server.mjs"
+    "serve": "node server/second-brain-server.mjs",
+    "serve:product": "node scripts/start-product.mjs",
+    "package:windows-product": "node scripts/create-windows-product-package.mjs"
   },
   "dependencies": {
     "@vitejs/plugin-react": "latest",
