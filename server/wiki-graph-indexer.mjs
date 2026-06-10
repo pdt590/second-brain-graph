@@ -50,6 +50,7 @@ export function createWikiGraphIndexer({ wikiDir = resolveWikiDir(), debounceMs 
   let graph = { nodes: [], links: [] };
   let nodesById = new Map();
   let version = 0;
+  let graphSignature = '';
   let rebuilding = null;
   let debounceTimer = null;
   let pollTimer = null;
@@ -63,10 +64,15 @@ export function createWikiGraphIndexer({ wikiDir = resolveWikiDir(), debounceMs 
 
   const rebuild = async () => {
     rebuilding = buildGraphFromWiki(wikiDir).then((next) => {
+      const nextSignature = createGraphSignature(next);
+      const changed = nextSignature !== graphSignature;
       graph = next;
       nodesById = new Map(next.nodes.map((node) => [node.id, node]));
-      version += 1;
-      notify();
+      if (changed) {
+        graphSignature = nextSignature;
+        version += 1;
+        notify();
+      }
       return graph;
     }).finally(() => {
       rebuilding = null;
@@ -199,6 +205,52 @@ function publicGraph(graph) {
       attachments: Array.isArray(node.attachments) ? node.attachments.map((attachment) => createPublicAsset(attachment.absolutePath, attachment.id)) : []
     }))
   };
+}
+
+function createGraphSignature(graph) {
+  const nodes = graph.nodes
+    .map((node) => ({
+      id: node.id,
+      name: node.name,
+      category: node.category,
+      summary: node.summary,
+      date: node.date,
+      sourcePath: node.sourcePath,
+      assetKind: node.assetKind?.key,
+      isRawAsset: Boolean(node.isRawAsset),
+      file: createFileSignature(node.absolutePath),
+      attachments: Array.isArray(node.attachments)
+        ? node.attachments
+          .map((attachment) => ({
+            id: attachment.id,
+            file: createFileSignature(attachment.absolutePath)
+          }))
+          .sort((a, b) => a.id.localeCompare(b.id))
+        : []
+    }))
+    .sort((a, b) => a.id.localeCompare(b.id));
+
+  const links = graph.links
+    .map((link) => ({
+      source: String(link.source),
+      target: String(link.target)
+    }))
+    .sort((a, b) => `${a.source}\0${a.target}`.localeCompare(`${b.source}\0${b.target}`));
+
+  return JSON.stringify({ wikiDir: graph.wikiDir, nodes, links });
+}
+
+function createFileSignature(filePath) {
+  if (!filePath) return null;
+  try {
+    const stat = statSync(filePath);
+    return {
+      size: stat.size,
+      mtimeMs: Math.round(stat.mtimeMs)
+    };
+  } catch {
+    return null;
+  }
 }
 
 async function ingestMarkdown(filePath, wikiDir, nodes, addLink, assetFiles = []) {

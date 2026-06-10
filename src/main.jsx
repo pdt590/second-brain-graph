@@ -371,6 +371,7 @@ function App() {
   const [isPasswordOpen, setIsPasswordOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [selectedId, setSelectedId] = useState('');
+  const selectedIdRef = useRef('');
   const [activeCats, setActiveCats] = useState(new Set());
   const previousCategoryKeysRef = useRef(new Set());
   const [isCategoryPanelOpen, setIsCategoryPanelOpen] = useState(false);
@@ -410,6 +411,7 @@ function App() {
   const chatMessages = chatNode
     ? messagesByNode[chatNode.id] || [{ role: 'agent', text: '可以围绕这个节点和它的邻近知识继续追问。' }]
     : [];
+  selectedIdRef.current = selectedId;
 
   useEffect(() => {
     setActiveCats((current) => {
@@ -653,6 +655,7 @@ function App() {
     }
 
     let cancelled = false;
+    let hasLoadedGraph = false;
     setGraphStatus('loading');
 
     const loadGraph = () => fetch('/api/graph', { cache: 'no-store' })
@@ -663,10 +666,20 @@ function App() {
       .then((data) => {
         const normalized = normalizeGraphData(data);
         if (cancelled || !normalized) return;
+        const firstLoad = !hasLoadedGraph;
+        hasLoadedGraph = true;
+        const nodeIds = new Set(normalized.nodes.map((node) => node.id));
+        const previousSelectedId = selectedIdRef.current;
+        const previousSelectionExists = previousSelectedId && nodeIds.has(previousSelectedId);
+
         setWikiGraph(normalized);
-        setSelectedId(normalized.nodes[0]?.id ?? '');
-        setIsPanelOpen(false);
-        didInitialFitRef.current = false;
+        setSelectedId((current) => nodeIds.has(current) ? current : (normalized.nodes[0]?.id ?? ''));
+        if (previousSelectedId && !previousSelectionExists) {
+          setIsPanelOpen(false);
+          setIsFull(false);
+          setChatNode(null);
+        }
+        if (firstLoad) didInitialFitRef.current = false;
         setGraphStatus(normalized.nodes.length ? 'ready' : 'empty');
       })
       .catch(() => {
