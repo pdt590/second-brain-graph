@@ -3,8 +3,8 @@ import http from 'node:http';
 import https from 'node:https';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { createApiRoutes } from './api-routes.mjs';
 import { createAuth, sendJson } from './auth.mjs';
-import { readChatHistory, summarizeChatHistory, writeChatHistory } from './chat-history.mjs';
 import { createEmbeddedHermesManager } from './embedded-hermes-manager.mjs';
 import { ensureProductRuntimeEnv, getHermesConfig, isProductMode, loadRuntimeEnv } from './runtime-config.mjs';
 import { createWikiGraphIndexer, resolveWikiDir } from './wiki-graph-indexer.mjs';
@@ -20,6 +20,7 @@ const stateRootDir = isProductMode(env) ? env.SECOND_BRAIN_PRODUCT_HOME : rootDi
 const wikiDir = resolveWikiDir(env);
 const indexer = createWikiGraphIndexer({ wikiDir });
 const auth = await createAuth({ rootDir: stateRootDir, env });
+const apiRoutes = createApiRoutes({ indexer, stateRootDir });
 const hermesManager = createEmbeddedHermesManager({ rootDir, env });
 
 await hermesManager.start();
@@ -44,12 +45,7 @@ const server = http.createServer(async (request, response) => {
     }
     if (url.pathname.startsWith('/api/auth/')) return auth.handle(request, response, url);
     if (url.pathname.startsWith('/api/') && !auth.getSessionUser(request)) return sendJson(response, { error: 'Unauthorized' }, 401);
-    if (url.pathname === '/api/graph') return sendJson(response, await indexer.getGraph());
-    if (url.pathname === '/api/chat/history') return handleChatHistory(request, response, url);
-    if (url.pathname === '/api/chat/summary') return handleChatSummary(request, response, url);
-    if (url.pathname === '/api/wiki/content') return sendWikiContent(url, response);
-    if (url.pathname === '/api/wiki/asset') return sendWikiAsset(url, response);
-    if (url.pathname === '/api/wiki/events') return sendWikiEvents(request, response);
+    if (await apiRoutes.handle(request, response, url)) return;
     if (url.pathname.startsWith('/api/hermes/')) return proxyHermes(request, response, url);
     return sendStatic(url, response);
   } catch (error) {
@@ -61,76 +57,6 @@ const server = http.createServer(async (request, response) => {
 server.listen(port, host, () => {
   console.log(`[second-brain] listening on http://${host}:${port}`);
 });
-
-async function sendWikiContent(url, response) {
-  const id = url.searchParams.get('id');
-  if (!id) return sendJson(response, { error: 'Missing node id' }, 400);
-  const content = await indexer.getNodeContent(id);
-  if (content == null) return sendJson(response, { error: 'Node content not found' }, 404);
-  response.writeHead(200, { 'Content-Type': 'text/markdown; charset=utf-8', 'Cache-Control': 'no-store' });
-  response.end(content);
-}
-
-async function sendWikiAsset(url, response) {
-  const id = url.searchParams.get('id');
-  if (!id) return sendJson(response, { error: 'Missing node id' }, 400);
-  const asset = await indexer.getNodeAsset(id);
-  if (!asset) return sendJson(response, { error: 'Source file not found' }, 404);
-  const disposition = url.searchParams.get('download') === '1' ? 'attachment' : 'inline';
-  response.writeHead(200, {
-    'Content-Type': asset.mimeType,
-    'Content-Length': asset.size,
-    'Content-Disposition': `${disposition}; filename*=UTF-8''${encodeURIComponent(asset.fileName)}`,
-    'Cache-Control': 'private, no-store',
-    'X-Content-Type-Options': 'nosniff'
-  });
-  createReadStream(asset.absolutePath).pipe(response);
-}
-
-async function handleChatHistory(request, response, url) {
-  if (request.method === 'GET') {
-    const nodeId = url.searchParams.get('nodeId');
-    if (!nodeId) return sendJson(response, { error: 'Missing nodeId' }, 400);
-    return sendJson(response, { messages: await readChatHistory(stateRootDir, nodeId) });
-  }
-
-  if (request.method === 'PUT') {
-    const body = await readJsonBody(request);
-    if (!body.nodeId) return sendJson(response, { error: 'Missing nodeId' }, 400);
-    const messages = Array.isArray(body.messages) ? body.messages : [];
-    await writeChatHistory(stateRootDir, body.nodeId, messages);
-    return sendJson(response, { ok: true });
-  }
-
-  return sendJson(response, { error: 'Method not allowed' }, 405);
-}
-
-async function handleChatSummary(request, response, url) {
-  if (request.method !== 'GET') return sendJson(response, { error: 'Method not allowed' }, 405);
-  const nodeId = url.searchParams.get('nodeId');
-  if (!nodeId) return sendJson(response, { error: 'Missing nodeId' }, 400);
-
-  return sendJson(response, summarizeChatHistory(nodeId, await readChatHistory(stateRootDir, nodeId)));
-}
-
-async function readJsonBody(request) {
-  let body = '';
-  for await (const chunk of request) body += chunk;
-  return body ? JSON.parse(body) : {};
-}
-
-function sendWikiEvents(request, response) {
-  response.writeHead(200, {
-    'Content-Type': 'text/event-stream',
-    'Cache-Control': 'no-store',
-    Connection: 'keep-alive'
-  });
-  response.write(`event: ready\ndata: ${JSON.stringify({ version: indexer.getVersion() })}\n\n`);
-  const unsubscribe = indexer.onUpdate(({ version }) => {
-    response.write(`event: graph-update\ndata: ${JSON.stringify({ version })}\n\n`);
-  });
-  request.on('close', unsubscribe);
-}
 
 async function proxyHermes(request, response, url) {
   const config = await getHermesConfig(env);
@@ -149,9 +75,17 @@ async function proxyHermes(request, response, url) {
   }, (proxyResponse) => {
     response.writeHead(proxyResponse.statusCode || 502, proxyResponse.headers);
     proxyResponse.pipe(response);
+    proxyResponse.on('error', () => response.destroy());
   });
 
-  proxyRequest.on('error', (error) => sendJson(response, { error: error.message }, 502));
+  proxyRequest.on('error', (error) => {
+    if (response.headersSent) {
+      response.destroy();
+      return;
+    }
+    sendJson(response, { error: error.message }, 502);
+  });
+  request.on('error', () => proxyRequest.destroy());
   request.pipe(proxyRequest);
 }
 

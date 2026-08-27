@@ -2,7 +2,6 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { createRoot } from 'react-dom/client';
 import {
   ArrowUpRight,
-  Bot,
   BookUp2,
   BrainCircuit,
   CalendarDays,
@@ -11,25 +10,19 @@ import {
   Command,
   FileText,
   Folder,
-  Image,
   KeyRound,
-  Link as LinkIcon,
   LogOut,
   Maximize2,
-  Mic2,
   Minimize2,
   MessageCircle,
   Moon,
   Network,
-  Pause,
-  Play,
   RotateCcw,
   Search,
   Send,
   SlidersHorizontal,
   Sun,
   User,
-  Video,
   X
 } from 'lucide-react';
 import './styles.css';
@@ -261,7 +254,6 @@ function normalizeGraphData(data) {
       category: String(node.category || 'root'),
       summary: String(node.summary || node.description || '此节点来自 Hermes llm-wiki，暂无摘要。'),
       date: typeof node.date === 'string' ? node.date : null,
-      media: Array.isArray(node.media) ? node.media : [],
       sourcePath: node.sourcePath,
       asset: node.asset && typeof node.asset === 'object' ? node.asset : null,
       attachments: Array.isArray(node.attachments) ? node.attachments.filter((asset) => asset && typeof asset === 'object') : [],
@@ -382,6 +374,7 @@ function App() {
   const [isPanelOpen, setIsPanelOpen] = useState(false);
   const [chatNode, setChatNode] = useState(null);
   const [messagesByNode, setMessagesByNode] = useState({});
+  const messagesByNodeRef = useRef({});
   const [loadedChatNodes, setLoadedChatNodes] = useState(new Set());
   const [chatSummaries, setChatSummaries] = useState({});
   const [isSending, setIsSending] = useState(false);
@@ -412,6 +405,7 @@ function App() {
     ? messagesByNode[chatNode.id] || [{ role: 'agent', text: '可以围绕这个节点和它的邻近知识继续追问。' }]
     : [];
   selectedIdRef.current = selectedId;
+  messagesByNodeRef.current = messagesByNode;
 
   useEffect(() => {
     setActiveCats((current) => {
@@ -474,19 +468,23 @@ function App() {
     };
   }, [chatNode, loadedChatNodes]);
 
+  const saveChatHistory = (nodeId) => {
+    const messages = messagesByNodeRef.current[nodeId];
+    if (!messages?.length || messages.some((message) => message.role === 'agent' && !message.text)) return;
+    fetch('/api/chat/history', {
+      method: 'PUT',
+      credentials: 'same-origin',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ nodeId, messages })
+    }).catch(() => {});
+  };
+
   useEffect(() => {
     if (!chatNode || !loadedChatNodes.has(chatNode.id)) return;
     const messages = messagesByNode[chatNode.id];
     if (!messages?.length || messages.some((message) => message.role === 'agent' && !message.text)) return;
 
-    const timeout = window.setTimeout(() => {
-      fetch('/api/chat/history', {
-        method: 'PUT',
-        credentials: 'same-origin',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ nodeId: chatNode.id, messages })
-      }).catch(() => {});
-    }, 500);
+    const timeout = window.setTimeout(() => saveChatHistory(chatNode.id), 500);
 
     return () => window.clearTimeout(timeout);
   }, [chatNode, loadedChatNodes, messagesByNode]);
@@ -502,10 +500,15 @@ function App() {
     return map;
   }, [graph]);
 
-  const selectedNode = graph.nodes.find((node) => node.id === selectedId) ?? graph.nodes[0];
-  const neighborNodes = selectedNode ? [...(neighborsById.get(selectedNode.id) ?? [])]
-    .map((id) => graph.nodes.find((node) => node.id === id))
-    .filter(Boolean) : [];
+  const nodesById = useMemo(() => new Map(graph.nodes.map((node) => [node.id, node])), [graph.nodes]);
+
+  const selectedNode = nodesById.get(selectedId) ?? graph.nodes[0];
+  const neighborNodes = useMemo(() => {
+    if (!selectedNode) return [];
+    return [...(neighborsById.get(selectedNode.id) ?? [])]
+      .map((id) => nodesById.get(id))
+      .filter(Boolean);
+  }, [neighborsById, nodesById, selectedNode]);
 
   const filteredGraph = useMemo(() => {
     const normalized = query.trim().toLowerCase();
@@ -750,7 +753,7 @@ function App() {
             .d3VelocityDecay(0.26)
             .nodeRelSize(4)
             .nodeResolution(18)
-            .nodeLabel((node) => `${node.name}<br/><span>${getCategoryMeta(node.category).label}</span>`)
+            .nodeLabel((node) => `${escapeHtml(node.name)}<br/><span>${escapeHtml(getCategoryMeta(node.category).label)}</span>`)
             .onNodeDragEnd((node) => {
               node.fx = node.x;
               node.fy = node.y;
@@ -890,7 +893,7 @@ function App() {
   const getNodeChatContext = async (targetNode) => {
     if (!targetNode) return '';
     const targetNeighbors = [...(neighborsById.get(targetNode.id) ?? [])]
-      .map((id) => graph.nodes.find((node) => node.id === id))
+      .map((id) => nodesById.get(id))
       .filter(Boolean);
     const sourceSnippet = await readNodeSourceSnippet(targetNode);
     const neighborContext = targetNeighbors.slice(0, 8).map((node) => (
@@ -1003,6 +1006,7 @@ function App() {
         index === current.length - 1 ? { ...message, text: 'Hermes API 请求失败，请检查服务地址、Key 和服务状态。' } : message
       )));
     } finally {
+      saveChatHistory(targetNode.id);
       setIsSending(false);
     }
   };
@@ -1054,6 +1058,7 @@ function App() {
         index === current.length - 1 ? { ...message, text: '洞察文件生成失败，请检查 Hermes 工具权限和 llm-wiki 路径。' } : message
       )));
     } finally {
+      saveChatHistory(targetNode.id);
       setIsGeneratingInsight(false);
     }
   };
@@ -1317,6 +1322,16 @@ function BrainNodeLogo() {
 
 function stripFrontmatter(text) {
   return text.startsWith('---\n') ? text.replace(/^---\n[\s\S]*?\n---\n?/, '').trim() : text.trim();
+}
+
+function escapeHtml(value) {
+  return String(value ?? '').replace(/[&<>"']/g, (char) => ({
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;'
+  })[char]);
 }
 
 function LoginPage({ theme, onToggleTheme, onLogin }) {
@@ -1688,6 +1703,27 @@ function ChatModal({ node, messages, summary, isSending, isGeneratingInsight, er
   const [showHistory, setShowHistory] = useState(false);
   const busy = isSending || isGeneratingInsight;
   const hasHistory = summary?.conversations?.length;
+  const messagesRef = useRef(null);
+  const isNearBottomRef = useRef(true);
+
+  // 打开窗口 / 切换布局时强制滚到底部
+  useEffect(() => {
+    const el = messagesRef.current;
+    if (el) el.scrollTop = el.scrollHeight;
+    isNearBottomRef.current = true;
+  }, [isMaximized, showHistory]);
+
+  // 流式输出时跟随最新消息（用户主动上滑则暂停跟随）
+  useEffect(() => {
+    const el = messagesRef.current;
+    if (el && isNearBottomRef.current) el.scrollTop = el.scrollHeight;
+  }, [messages]);
+
+  const handleMessagesScroll = () => {
+    const el = messagesRef.current;
+    if (!el) return;
+    isNearBottomRef.current = el.scrollHeight - el.scrollTop - el.clientHeight < 48;
+  };
 
   return (
     <div className="chat-modal-backdrop" style={{ '--node-color': getCategoryMeta(node.category).color }}>
@@ -1736,7 +1772,7 @@ function ChatModal({ node, messages, summary, isSending, isGeneratingInsight, er
           </div>
         )}
 
-        <div className="messages">
+        <div className="messages" ref={messagesRef} onScroll={handleMessagesScroll}>
           {(isMaximized ? messages : messages.slice(-4)).map((message, index) => (
             <div key={`${message.role}-${index}`} className={`message ${message.role}`}>
               <MarkdownContent content={message.text || (message.role === 'agent' ? '正在思考...' : '')} />
@@ -1919,54 +1955,19 @@ function renderInlineMarkdown(text) {
       parts.push(<span className="wikilink" key={parts.length}>{token.slice(2, -2)}</span>);
     } else {
       const link = token.match(/^\[([^\]]+)\]\(([^)]+)\)$/);
-      parts.push(<a key={parts.length} href={link[2]} target="_blank" rel="noreferrer">{link[1]}</a>);
+      const href = link?.[2] || '';
+      const isSafeScheme = /^(https?:|mailto:)/i.test(href) || !/^[a-z][a-z0-9+.-]*:/i.test(href);
+      if (!isSafeScheme) {
+        parts.push(<span key={parts.length}>{link?.[1] || token}</span>);
+      } else {
+        parts.push(<a key={parts.length} href={href} target="_blank" rel="noreferrer">{link[1]}</a>);
+      }
     }
     lastIndex = match.index + token.length;
   }
 
   if (lastIndex < text.length) parts.push(text.slice(lastIndex));
   return parts;
-}
-
-function MediaItem({ item }) {
-  const [playing, setPlaying] = useState(false);
-  if (item.type === 'image') {
-    return (
-      <figure className="media-card image-card">
-        <img src={item.url} alt={item.title} />
-        <figcaption><Image size={15} />{item.title}</figcaption>
-      </figure>
-    );
-  }
-  if (item.type === 'video') {
-    return (
-      <figure className="media-card">
-        <video src={item.url} controls />
-        <figcaption><Video size={15} />{item.title}</figcaption>
-      </figure>
-    );
-  }
-  if (item.type === 'audio') {
-    return (
-      <div className="media-card audio-card">
-        <button onClick={() => setPlaying((value) => !value)} aria-label={playing ? 'Pause audio' : 'Play audio'}>
-          {playing ? <Pause size={18} /> : <Play size={18} />}
-        </button>
-        <div>
-          <strong>{item.title}</strong>
-          <audio src={item.url} controls autoPlay={playing} />
-        </div>
-        <Mic2 size={18} />
-      </div>
-    );
-  }
-  return (
-    <a className="media-card link-card" href={item.url} target="_blank" rel="noreferrer">
-      <LinkIcon size={17} />
-      <span>{item.title}</span>
-      <ArrowUpRight size={16} />
-    </a>
-  );
 }
 
 createRoot(document.getElementById('root')).render(<App />);

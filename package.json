@@ -5,16 +5,17 @@
     "preview": "vite preview --host 0.0.0.0",
     "serve": "node server/second-brain-server.mjs",
     "serve:product": "node scripts/start-product.mjs",
-    "package:windows-product": "node scripts/create-windows-product-package.mjs"
+    "package:windows-product": "node scripts/create-windows-product-package.mjs",
+    "test": "node --test"
   },
   "dependencies": {
-    "@vitejs/plugin-react": "latest",
+    "@vitejs/plugin-react": "^6.0.1",
     "3d-force-graph": "^1.80.0",
-    "force-graph": "latest",
-    "lucide-react": "latest",
-    "react": "latest",
-    "react-dom": "latest",
+    "force-graph": "^1.51.4",
+    "lucide-react": "^1.14.0",
+    "react": "^19.2.6",
+    "react-dom": "^19.2.6",
     "three": "^0.184.0",
-    "vite": "latest"
+    "vite": "^8.0.12"
   }
 }

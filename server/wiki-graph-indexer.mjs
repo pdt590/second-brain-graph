@@ -51,11 +51,13 @@ export function createWikiGraphIndexer({ wikiDir = resolveWikiDir(), debounceMs 
   let nodesById = new Map();
   let version = 0;
   let graphSignature = '';
+  let publicCache = null;
   let rebuilding = null;
   let debounceTimer = null;
   let pollTimer = null;
   let watcherCleanup = () => {};
   let watcherRefreshing = null;
+  const documentCache = createDocumentCache();
   const listeners = new Set();
 
   const notify = () => {
@@ -63,7 +65,7 @@ export function createWikiGraphIndexer({ wikiDir = resolveWikiDir(), debounceMs 
   };
 
   const rebuild = async () => {
-    rebuilding = buildGraphFromWiki(wikiDir).then((next) => {
+    rebuilding = buildGraphFromWiki(wikiDir, { documentCache }).then((next) => {
       const nextSignature = createGraphSignature(next);
       const changed = nextSignature !== graphSignature;
       graph = next;
@@ -71,6 +73,7 @@ export function createWikiGraphIndexer({ wikiDir = resolveWikiDir(), debounceMs 
       if (changed) {
         graphSignature = nextSignature;
         version += 1;
+        publicCache = null;
         notify();
       }
       return graph;
@@ -121,7 +124,10 @@ export function createWikiGraphIndexer({ wikiDir = resolveWikiDir(), debounceMs 
 
   const getGraph = async () => {
     if (rebuilding) await rebuilding;
-    return publicGraph(graph);
+    if (publicCache) return publicCache;
+    const result = publicGraph(graph);
+    publicCache = result;
+    return result;
   };
 
   const getNodeContent = async (id) => {
@@ -160,7 +166,31 @@ export function createWikiGraphIndexer({ wikiDir = resolveWikiDir(), debounceMs 
   };
 }
 
-export async function buildGraphFromWiki(wikiDir) {
+function createDocumentCache() {
+  const entries = new Map();
+  return {
+    assetSignature: '',
+    get(filePath, stat) {
+      const entry = entries.get(filePath);
+      if (!entry || entry.mtimeMs !== stat.mtimeMs || entry.size !== stat.size) return null;
+      return entry;
+    },
+    set(filePath, stat, result) {
+      entries.set(filePath, { mtimeMs: stat.mtimeMs, size: stat.size, nodes: result.nodes, links: result.links });
+    },
+    clear() {
+      entries.clear();
+    },
+    prune(validPaths) {
+      const valid = new Set(validPaths);
+      for (const filePath of entries.keys()) {
+        if (!valid.has(filePath)) entries.delete(filePath);
+      }
+    }
+  };
+}
+
+export async function buildGraphFromWiki(wikiDir, { documentCache = null } = {}) {
   const files = await walk(wikiDir);
   const assetFiles = files.filter((filePath) => RAW_ASSET_EXTENSIONS.has(path.extname(filePath).toLowerCase()));
   const nodes = new Map();
@@ -177,16 +207,42 @@ export async function buildGraphFromWiki(wikiDir) {
     links.push({ source: sourceId, target: targetId });
   };
 
-  for (const filePath of files) {
-    const ext = path.extname(filePath).toLowerCase();
-    if (DOCUMENT_EXTENSIONS.has(ext) && ext === '.json') {
-      await ingestJson(filePath, wikiDir, nodes, addLink);
-    } else if (DOCUMENT_EXTENSIONS.has(ext)) {
-      await ingestMarkdown(filePath, wikiDir, nodes, addLink, assetFiles);
-    } else if (RAW_ASSET_EXTENSIONS.has(ext)) {
-      ingestRawAsset(filePath, wikiDir, nodes);
+  if (documentCache) {
+    // 附件模糊匹配依赖完整的资产文件列表：资产集合变化时，文档解析结果必须全部失效
+    const assetSignature = assetFiles.join('\n');
+    if (assetSignature !== documentCache.assetSignature) {
+      documentCache.clear();
+      documentCache.assetSignature = assetSignature;
     }
   }
+
+  for (const filePath of files) {
+    const ext = path.extname(filePath).toLowerCase();
+    if (DOCUMENT_EXTENSIONS.has(ext)) {
+      let result = null;
+      if (documentCache) {
+        const stat = statSync(filePath);
+        result = documentCache.get(filePath, stat);
+        if (!result) {
+          result = ext === '.json'
+            ? await ingestJson(filePath, wikiDir)
+            : await ingestMarkdown(filePath, wikiDir, assetFiles);
+          documentCache.set(filePath, stat, result);
+        }
+      } else {
+        result = ext === '.json'
+          ? await ingestJson(filePath, wikiDir)
+          : await ingestMarkdown(filePath, wikiDir, assetFiles);
+      }
+      for (const node of result.nodes) nodes.set(node.id, node);
+      for (const [source, target] of result.links) addLink(source, target);
+    } else if (RAW_ASSET_EXTENSIONS.has(ext)) {
+      const node = ingestRawAsset(filePath, wikiDir);
+      nodes.set(node.id, node);
+    }
+  }
+
+  if (documentCache) documentCache.prune(files);
 
   return {
     generatedAt: new Date().toISOString(),
@@ -253,7 +309,7 @@ function createFileSignature(filePath) {
   }
 }
 
-async function ingestMarkdown(filePath, wikiDir, nodes, addLink, assetFiles = []) {
+async function ingestMarkdown(filePath, wikiDir, assetFiles = []) {
   const raw = await readFile(filePath, 'utf8');
   const stat = statSync(filePath);
   const { data, body } = parseFrontmatter(raw);
@@ -261,7 +317,7 @@ async function ingestMarkdown(filePath, wikiDir, nodes, addLink, assetFiles = []
   const sourcePath = path.relative(wikiDir, filePath);
   const attachments = extractAssetReferences(body, data, filePath, wikiDir, assetFiles);
 
-  nodes.set(id, {
+  const node = {
     id,
     name: String(data.title || firstHeading(body) || titleFromId(id)),
     category: rootCategoryFromFile(filePath, wikiDir),
@@ -272,7 +328,7 @@ async function ingestMarkdown(filePath, wikiDir, nodes, addLink, assetFiles = []
     assetKind: getAssetKind(filePath),
     attachments,
     contentUrl: `/api/wiki/content?id=${encodeURIComponent(id)}`
-  });
+  };
 
   const explicitLinks = normalizeList(data.links || data.related || data.edges);
   const sourceLinks = normalizeList(data.sources).map((source) => normalizeId(String(source), wikiDir));
@@ -287,17 +343,21 @@ async function ingestMarkdown(filePath, wikiDir, nodes, addLink, assetFiles = []
     .map((href) => normalizeId(relativeStem(path.resolve(path.dirname(filePath), href.split('#')[0]), wikiDir), wikiDir));
 
   const attachmentLinks = attachments.map((attachment) => attachment.id);
-  for (const target of [...explicitLinks, ...sourceLinks, ...wikiLinks, ...markdownLinks, ...attachmentLinks]) addLink(id, target);
+  const links = [...explicitLinks, ...sourceLinks, ...wikiLinks, ...markdownLinks, ...attachmentLinks]
+    .map((target) => [id, target]);
+  return { nodes: [node], links };
 }
 
-async function ingestJson(filePath, wikiDir, nodes, addLink) {
+async function ingestJson(filePath, wikiDir) {
   const stat = statSync(filePath);
   const parsed = JSON.parse(await readFile(filePath, 'utf8'));
   const entries = Array.isArray(parsed.nodes) ? parsed.nodes : [parsed];
+  const nodes = [];
+  const links = [];
 
   for (const entry of entries) {
     const id = normalizeId(entry.id || entry.slug || relativeStem(filePath, wikiDir), wikiDir);
-    nodes.set(id, {
+    nodes.push({
       id,
       name: String(entry.name || entry.title || titleFromId(id)),
       category: rootCategoryFromFile(filePath, wikiDir),
@@ -309,17 +369,18 @@ async function ingestJson(filePath, wikiDir, nodes, addLink) {
       attachments: [],
       contentUrl: `/api/wiki/content?id=${encodeURIComponent(id)}`
     });
-    for (const target of normalizeList(entry.links || entry.related || entry.edges)) addLink(id, target);
+    for (const target of normalizeList(entry.links || entry.related || entry.edges)) links.push([id, target]);
   }
 
-  for (const link of parsed.links || []) addLink(link.source, link.target);
+  for (const link of parsed.links || []) links.push([link.source, link.target]);
+  return { nodes, links };
 }
 
-function ingestRawAsset(filePath, wikiDir, nodes) {
+function ingestRawAsset(filePath, wikiDir) {
   const id = normalizeId(relativeStem(filePath, wikiDir), wikiDir);
   const stat = statSync(filePath);
   const kind = getAssetKind(filePath);
-  nodes.set(id, {
+  return {
     id,
     name: titleFromId(id),
     category: rootCategoryFromFile(filePath, wikiDir),
@@ -330,7 +391,7 @@ function ingestRawAsset(filePath, wikiDir, nodes) {
     assetKind: kind,
     attachments: [],
     isRawAsset: true
-  });
+  };
 }
 
 async function walk(dir) {
