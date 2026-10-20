@@ -208,7 +208,7 @@ export async function buildGraphFromWiki(wikiDir, { documentCache = null } = {})
   };
 
   if (documentCache) {
-    // 附件模糊匹配依赖完整的资产文件列表：资产集合变化时，文档解析结果必须全部失效
+    // Fuzzy attachment matching requires the full asset list: invalidate all parsed documents when the asset collection changes.
     const assetSignature = assetFiles.join('\n');
     if (assetSignature !== documentCache.assetSignature) {
       documentCache.clear();
@@ -361,7 +361,7 @@ async function ingestJson(filePath, wikiDir) {
       id,
       name: String(entry.name || entry.title || titleFromId(id)),
       category: rootCategoryFromFile(filePath, wikiDir),
-      summary: String(entry.summary || entry.description || '此节点来自 llm-wiki，暂无摘要。'),
+      summary: String(entry.summary || entry.description || 'This node comes from llm-wiki. No summary is available.'),
       date: inferNodeDate(entry, filePath, path.relative(wikiDir, filePath), stat),
       sourcePath: path.relative(wikiDir, filePath),
       absolutePath: filePath,
@@ -606,7 +606,7 @@ function summarize(body) {
     .replace(/[#>*_`~-]/g, ' ')
     .replace(/\s+/g, ' ')
     .trim();
-  return text.slice(0, 220) || '此节点来自 llm-wiki，暂无摘要。';
+  return text.slice(0, 220) || 'This node comes from llm-wiki. No summary is available.';
 }
 
 function stripFrontmatter(text) {
@@ -649,7 +649,7 @@ function normalizeDateValue(value) {
 }
 
 function extractDateFromText(text) {
-  const dashed = String(text).match(/(?:^|[^\d])((?:19|20)\d{2})[-_./年]([01]\d)[-_./月]([0-3]\d)(?:日)?(?:$|[^\d])/);
+  const dashed = String(text).match(/(?:^|[^\d])((?:19|20)\d{2})[-_./\u5e74]([01]\d)[-_./\u6708]([0-3]\d)(?:\u65e5)?(?:$|[^\d])/);
   if (dashed) return formatDateParts(dashed[1], dashed[2], dashed[3]);
   const compact = String(text).match(/(?:^|[^\d])((?:19|20)\d{2})([01]\d)([0-3]\d)(?:$|[^\d])/);
   if (compact) return formatDateParts(compact[1], compact[2], compact[3]);
@@ -699,7 +699,7 @@ function titleFromId(id) {
 function createAssetSummary(filePath, kind, size) {
   const fileName = path.basename(filePath);
   const sizeLabel = formatFileSize(size);
-  return `源文件：${fileName}。类型：${kind.label}。大小：${sizeLabel}。可以在节点详情中预览或下载。`;
+  return `Source file: ${fileName}. Type: ${kind.label}. Size: ${sizeLabel}. Preview or download it in the node details.`;
 }
 
 function createPublicAsset(filePath, id) {
@@ -735,15 +735,15 @@ function createAssetDescriptor(filePath, id) {
 function getAssetKind(filePath) {
   const previewType = getPreviewType(path.extname(filePath).toLowerCase(), getMimeType(path.extname(filePath).toLowerCase()));
   const labels = {
-    image: '图片',
-    video: '视频',
-    audio: '音频',
-    pdf: 'PDF 文档',
-    text: '文本',
-    markdown: 'Markdown 文档',
-    unsupported: '文件'
+    image: 'Image',
+    video: 'Video',
+    audio: 'Audio',
+    pdf: 'PDF document',
+    text: 'Text',
+    markdown: 'Markdown document',
+    unsupported: 'File'
   };
-  return { type: previewType, label: labels[previewType] || '文件' };
+  return { type: previewType, label: labels[previewType] || 'File' };
 }
 
 function getPreviewType(extension, mimeType) {
@@ -796,7 +796,7 @@ function getMimeType(extension) {
 }
 
 function formatFileSize(bytes) {
-  if (!Number.isFinite(bytes) || bytes < 0) return '未知';
+  if (!Number.isFinite(bytes) || bytes < 0) return 'Unknown';
   const units = ['B', 'KB', 'MB', 'GB'];
   let value = bytes;
   let unit = 0;

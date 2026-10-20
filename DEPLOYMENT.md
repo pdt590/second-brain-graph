@@ -42,7 +42,7 @@ It reads wiki files to build the graph and to show node source content. It write
 <app directory>/data/chat-history/
 ```
 
-The only flow intended to create a new wiki file is the user-confirmed “保存到 Wiki” action, which asks Hermes to use its own tools. Ordinary node chat is prompted as read-only and should not write to llm-wiki.
+The only flow intended to create a new wiki file is the user-confirmed “Save to Wiki” action, which asks Hermes to use its own tools. Ordinary node chat is prompted as read-only and should not write to llm-wiki.
 
 ## Environment
 
@@ -217,8 +217,8 @@ The app will be available at `http://localhost:3030` (or the port set in `.env`)
 
 | Container Path | Purpose | Persistence |
 |---|---|---|
-| `/wiki` | Wiki 知识库（只读） | 通过 `.env` 的 `HERMES_WIKI_DIR` 挂载宿主机目录 |
-| `/app/data` | `auth.json` + 聊天历史 | 命名卷 `second-brain-data`，容器重建后保留 |
+| `/wiki` | Wiki knowledge base (read-only) | Mount the host directory using HERMES_WIKI_DIR in .env |
+| `/app/data` | `auth.json` + chat history | Named volume `second-brain-data`, preserved when the container is recreated |
 
 ### Connecting to Hermes
 

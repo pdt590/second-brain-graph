@@ -1,7 +1,7 @@
-@import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Sora:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400;1,500;1,600;1,700;1,800&display=swap');
 
 :root {
-  font-family: 'Sora', sans-serif;
+  font-family: 'Be Vietnam Pro', sans-serif;
   background: #020408;
   color: #edf7ff;
   --app-bg:
@@ -184,7 +184,7 @@ button {
 .login-brand strong,
 .dialog-head strong {
   display: block;
-  font-family: 'Rajdhani', sans-serif;
+  font-family: 'Be Vietnam Pro', sans-serif;
   font-size: 28px;
   line-height: 1;
 }
@@ -325,7 +325,7 @@ button {
 
 .brand strong,
 .node-panel h1 {
-  font-family: 'Rajdhani', sans-serif;
+  font-family: 'Be Vietnam Pro', sans-serif;
   letter-spacing: 0;
 }
 
@@ -942,11 +942,11 @@ button {
 }
 
 .node-panel.is-full .summary::before {
-  content: '原文';
+  content: 'Source';
   display: block;
   margin-bottom: 12px;
   color: color-mix(in srgb, var(--node-color), white 16%);
-  font-family: 'Rajdhani', sans-serif;
+  font-family: 'Be Vietnam Pro', sans-serif;
   font-size: 15px;
   font-weight: 700;
 }
@@ -1056,7 +1056,7 @@ button {
 .node-panel h1 {
   max-width: 100%;
   margin: 6px 0 0;
-  font-family: 'Rajdhani', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  font-family: 'Be Vietnam Pro', sans-serif;
   font-size: clamp(26px, 3vw, 38px);
   font-weight: 800;
   line-height: 1.05;
@@ -1108,7 +1108,7 @@ button {
 .markdown-body h4 {
   margin: 1.2em 0 .55em;
   color: var(--text-main);
-  font-family: 'Rajdhani', sans-serif;
+  font-family: 'Be Vietnam Pro', sans-serif;
   line-height: 1.05;
 }
 
@@ -1333,7 +1333,7 @@ button {
 
 .source-asset-head span {
   color: color-mix(in srgb, var(--node-color), white 14%);
-  font-family: 'Rajdhani', sans-serif;
+  font-family: 'Be Vietnam Pro', sans-serif;
   font-size: 13px;
   font-weight: 800;
   text-transform: uppercase;
@@ -1423,7 +1423,7 @@ button {
 .section-title {
   margin-bottom: 9px;
   color: var(--text-muted);
-  font-family: 'Rajdhani', sans-serif;
+  font-family: 'Be Vietnam Pro', sans-serif;
   font-size: 14px;
   font-weight: 700;
   text-transform: uppercase;

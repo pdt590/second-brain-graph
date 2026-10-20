@@ -15,22 +15,46 @@ Interactive 3D/2D knowledge graph for exploring an LLM-powered wiki knowledge ba
 
 ## Architecture
 
-```
-┌─────────────┐     ┌───────────────┐     ┌──────────────────┐
-│  Frontend   │────▶│  Node Server  │────▶│  Wiki Directory  │
-│  (Vite/     │◀────│  (HTTP API +  │◀────│  (Markdown/JSON  │
-│   React)    │     │   SSE stream) │     │   files, watched)│
-│             │     │               │     └──────────────────┘
-│  3D: Three.js    │               │
-│  2D: Canvas      │               │     ┌──────────────────┐
-│                  │     ┌────────▶│────▶│  Hermes Agent    │
-└─────────────┘     │     │         │     │  (External LLM)  │
-                    │     │         │     └──────────────────┘
-                    │     │         │
-                    │     │         │     ┌──────────────────┐
-                    │     │         │◀────│  Chat History    │
-                    │     │         │     │  (JSON files)    │
-                    └─────┴─────────┘     └──────────────────┘
+```mermaid
+flowchart TB
+    browser["Browser ? React<br/>3D: Three.js ? 2D: Canvas"]
+
+    subgraph app["Application server ? same-origin API"]
+        entry["Development: Vite + embedded API<br/>Production: Node.js + dist/"]
+        auth["Authentication<br/>Signed session cookies"]
+        routes["Shared API routes<br/>Graph ? Wiki content/assets ? Chat history"]
+        indexer["Wiki indexer<br/>Parse files ? Cache graph ? Watch changes"]
+        proxy["Hermes API proxy<br/>Forward requests and stream responses"]
+        events["Wiki events ? SSE"]
+    end
+
+    subgraph storage["Local storage"]
+        wiki[("Wiki directory<br/>Markdown ? JSON ? Assets")]
+        credentials[("auth.json<br/>Password hashes ? Session secret")]
+        history[("Chat history<br/>JSON files")]
+    end
+
+    hermes["Hermes Agent API<br/>External service or bundled product runtime"]
+
+    browser <-->|"HTTP requests / responses"| entry
+    entry --> auth
+    auth <--> credentials
+    auth -->|"Authenticated requests"| routes
+    auth -->|"Authenticated AI requests"| proxy
+    routes --> indexer
+    routes <-->|"Read / write conversations"| history
+    indexer -->|"Read / watch"| wiki
+    indexer -->|"Graph changed"| events
+    events -->|"Notify browser to refresh graph"| browser
+    proxy <-->|"Chat / streaming"| hermes
+    hermes -.->|"Save to Wiki: explicit user action"| wiki
+
+    classDef client fill:#102b39,stroke:#38bdf8,color:#e0f2fe
+    classDef service fill:#172b24,stroke:#34d399,color:#d1fae5
+    classDef data fill:#302817,stroke:#fbbf24,color:#fef3c7
+    class browser client
+    class entry,auth,routes,indexer,proxy,events,hermes service
+    class wiki,credentials,history data
 ```
 
 The entire frontend is a single-file React app (~2100 lines) with no external router or state management library. The backend is a lightweight Node.js HTTP server using only built-in modules (no Express). The production server serves static files, proxies to Hermes, and watches the wiki directory for changes.
@@ -148,7 +172,7 @@ Upload the generated package from `release/` as a GitHub Release artifact; do no
 - The wiki directory is **read-only** — the app only reads wiki files to build the graph and show node content.
 - The app writes only to its own `data/` directory: `auth.json` (credentials) and `data/chat-history/` (per-node conversation logs).
 - Authentication uses HMAC-SHA256 signed cookies with scrypt password hashing.
-- The "保存到 Wiki" action is the only flow that can create new wiki files, and it only runs when the user explicitly clicks that button.
+- The "Save to Wiki" action is the only flow that can create new wiki files, and it only runs when the user explicitly clicks that button.
 
 ## Scripts
 

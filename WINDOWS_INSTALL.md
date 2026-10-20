@@ -1,59 +1,59 @@
-# Windows 一键安装说明
+# Windows One-Click Installation
 
-给 Windows 朋友使用时：
+To share the application with a Windows user:
 
-1. 把项目打成 zip 发给他。
-2. 让他在 Windows 里解压。
-3. 双击 `install-second-brain-windows.bat`。
-4. 安装完成后浏览器会打开：
+1. Package the project as a ZIP archive and send it to them.
+2. Extract the archive on Windows.
+3. Double-click `install-second-brain-windows.bat`.
+4. After installation, the browser opens:
 
 ```text
 http://localhost:3030
 ```
 
-默认登录账号：
+Default login credentials:
 
 ```text
-用户名：admin
-密码：123456
+Username：admin
+Password：123456
 ```
 
-如果 `http://localhost:3030` 在 Windows 浏览器里打不开，看安装窗口最后输出的第二个地址，通常类似：
+If `http://localhost:3030` does not open in the Windows browser, use the second address printed at the end of the installation, typically:
 
 ```text
 http://172.xx.xx.xx:3030
 ```
 
-这是 WSL 的局域地址，在某些 Windows/WSL 环境里比 `localhost` 更稳定。
+This is the local WSL address. In some Windows/WSL environments it is more reliable than `localhost`.
 
-## 前置条件
+## Prerequisites
 
-他的 Windows 电脑需要已经具备：
+The Windows computer must already have:
 
 - WSL
 - Hermes Agent
-- Hermes 的 `llm-wiki` 已经配置或已有 wiki 目录
-- WSL 里有 Node.js 18+ 和 npm，或 Hermes 自带 Node 位于 `~/.hermes/node/bin`
+- A configured Hermes `llm-wiki` or an existing wiki directory
+- Node.js 18+ and npm in WSL, or the Node runtime bundled with Hermes at `~/.hermes/node/bin`
 
-## 安装器会做什么
+## What the installer does
 
-- 把项目复制到 WSL 的 `~/second-brain-graph-app`
-- 自动寻找 wiki 目录：
+- Copies the project to `~/second-brain-graph-app` in WSL
+- Automatically finds the wiki directory:
   - `$HERMES_WIKI_DIR`
   - `~/.hermes/llm-wiki`
   - `~/wiki`
   - `~/llm-wiki`
-- 从 `~/.hermes/.env` 读取 `API_SERVER_KEY`
-- 自动探测 Hermes API：
+- Reads `API_SERVER_KEY` from `~/.hermes/.env`
+- Automatically detects the Hermes API:
   - `http://127.0.0.1:8643`
   - `http://127.0.0.1:8642`
-- 安装 npm 依赖
-- 构建前端
-- 后台启动 Second Brain Graph
+- Installs npm dependencies
+- Builds the frontend
+- Starts Second Brain Graph in the background
 
-## 常用命令
+## Common commands
 
-在 WSL 里：
+In WSL:
 
 ```bash
 bash ~/second-brain-graph-app/status-second-brain.sh
@@ -62,19 +62,19 @@ bash ~/second-brain-graph-app/start-second-brain.sh
 bash ~/second-brain-graph-app/reset-admin-password.sh 123456
 ```
 
-配置文件：
+Configuration file:
 
 ```bash
 ~/second-brain-graph-app/.env
 ```
 
-如果 wiki 路径没有自动识别，修改 `.env` 里的：
+If the wiki path is not detected automatically, update this setting in `.env`:
 
 ```bash
 HERMES_WIKI_DIR=/path/to/wiki
 ```
 
-然后重启：
+Then restart:
 
 ```bash
 bash ~/second-brain-graph-app/stop-second-brain.sh

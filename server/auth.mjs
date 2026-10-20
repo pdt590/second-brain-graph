@@ -20,7 +20,7 @@ export async function createAuth({ rootDir, env = process.env } = {}) {
       if (request.method === 'POST' && url.pathname === '/api/auth/login') {
         const body = await readJsonBody(request);
         if (body.name !== auth.username || !verifyPassword(body.password || '', auth.password)) {
-          return sendJson(response, { error: '用户名或密码不正确。' }, 401);
+          return sendJson(response, { error: 'Incorrect username or password.' }, 401);
         }
         response.setHeader('Set-Cookie', sessionCookie(signSession({ name: auth.username }, auth.sessionSecret), request));
         return sendJson(response, { user: { name: auth.username } });
@@ -35,8 +35,8 @@ export async function createAuth({ rootDir, env = process.env } = {}) {
         const user = this.getSessionUser(request);
         if (!user) return sendJson(response, { error: 'Unauthorized' }, 401);
         const body = await readJsonBody(request);
-        if (!verifyPassword(body.current || '', auth.password)) return sendJson(response, { error: '当前密码不正确。' }, 400);
-        if (!body.next || String(body.next).length < 8) return sendJson(response, { error: '新密码至少需要 8 位。' }, 400);
+        if (!verifyPassword(body.current || '', auth.password)) return sendJson(response, { error: 'The current password is incorrect.' }, 400);
+        if (!body.next || String(body.next).length < 8) return sendJson(response, { error: 'The new password must contain at least 8 characters.' }, 400);
         auth.password = hashPassword(String(body.next));
         await saveAuthStore(auth, { rootDir, env });
         return sendJson(response, { ok: true });

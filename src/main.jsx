@@ -252,7 +252,7 @@ function normalizeGraphData(data) {
       id: String(node.id),
       name: String(node.name || node.title || node.id),
       category: String(node.category || 'root'),
-      summary: String(node.summary || node.description || '此节点来自 Hermes llm-wiki，暂无摘要。'),
+      summary: String(node.summary || node.description || 'This node comes from Hermes llm-wiki. No summary is available.'),
       date: typeof node.date === 'string' ? node.date : null,
       sourcePath: node.sourcePath,
       asset: node.asset && typeof node.asset === 'object' ? node.asset : null,
@@ -283,7 +283,7 @@ async function readHermesResponse(response, onChunk) {
   const contentType = response.headers.get('content-type') || '';
   if (!response.body || !contentType.includes('text/event-stream')) {
     const data = await response.json();
-    const text = extractHermesContent(data).trim() || 'Hermes API 未返回可读取的内容。';
+    const text = extractHermesContent(data).trim() || 'The Hermes API returned no readable content.';
     onChunk(text);
     return text;
   }
@@ -355,7 +355,7 @@ function App() {
   const [theme, setTheme] = useState(() => {
     const stored = window.localStorage.getItem('hermes-graph-theme');
     if (stored === 'light' || stored === 'dark') return stored;
-    return window.matchMedia?.('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+    return 'dark';
   });
   const [authUser, setAuthUser] = useState(null);
   const [authStatus, setAuthStatus] = useState('checking');
@@ -402,7 +402,7 @@ function App() {
   }, [categoryQuery, categoryStats]);
   const hiddenCategoryCount = Math.max(0, categoryStats.length - quickCategories.length);
   const chatMessages = chatNode
-    ? messagesByNode[chatNode.id] || [{ role: 'agent', text: '可以围绕这个节点和它的邻近知识继续追问。' }]
+    ? messagesByNode[chatNode.id] || [{ role: 'agent', text: 'Ask follow-up questions about this node and its related knowledge.' }]
     : [];
   selectedIdRef.current = selectedId;
   messagesByNodeRef.current = messagesByNode;
@@ -445,7 +445,7 @@ function App() {
           ...current,
           [chatNode.id]: data.messages?.length
             ? data.messages
-            : [{ role: 'agent', text: '可以围绕这个节点和它的邻近知识继续追问。' }]
+            : [{ role: 'agent', text: 'Ask follow-up questions about this node and its related knowledge.' }]
         }));
         setLoadedChatNodes((current) => new Set(current).add(chatNode.id));
       })
@@ -635,7 +635,7 @@ function App() {
       body: JSON.stringify({ name, password })
     });
     const data = await response.json();
-    if (!response.ok) throw new Error(data.error || '登录失败。');
+    if (!response.ok) throw new Error(data.error || 'Login failed.');
     didInitialFitRef.current = false;
     setAuthUser(data.user);
   };
@@ -715,7 +715,7 @@ function App() {
     host.replaceChildren();
 
     if (graphMode === GRAPH_MODES.THREE_D && !hasWebGLSupport()) {
-      setGraphNotice('当前浏览器不支持 WebGL，已切换到 2D 图谱。');
+      setGraphNotice('This browser does not support WebGL. Switched to the 2D graph.');
       setGraphMode(GRAPH_MODES.TWO_D);
       return undefined;
     }
@@ -797,7 +797,7 @@ function App() {
       } catch {
         if (cancelled) return;
         if (graphMode === GRAPH_MODES.THREE_D) {
-          setGraphNotice('3D 图谱初始化失败，已切换到 2D 图谱。');
+          setGraphNotice('The 3D graph could not initialize. Switched to the 2D graph.');
           setGraphMode(GRAPH_MODES.TWO_D);
         }
       }
@@ -868,7 +868,7 @@ function App() {
 
           const label = node.name;
           const fontSize = Math.max(3, 13 / globalScale);
-          ctx.font = `600 ${fontSize}px Sora, sans-serif`;
+          ctx.font = `600 ${fontSize}px "Be Vietnam Pro", sans-serif`;
           ctx.textAlign = 'center';
           ctx.fillStyle = theme === 'dark'
             ? (isSelected || isNeighbor ? 'rgba(244,249,255,.96)' : 'rgba(187,204,218,.72)')
@@ -897,26 +897,26 @@ function App() {
       .filter(Boolean);
     const sourceSnippet = await readNodeSourceSnippet(targetNode);
     const neighborContext = targetNeighbors.slice(0, 8).map((node) => (
-      `- ${node.name}｜类别：${getCategoryMeta(node.category).label}｜路径：${node.sourcePath || 'Generated reference'}\n  摘要：${node.summary}`
+      `- ${node.name} | Category: ${getCategoryMeta(node.category).label} | Path: ${node.sourcePath || 'Generated reference'}\n  Summary: ${node.summary}`
     )).join('\n');
 
     return [
-      `当前节点：${targetNode.name}`,
-      `类别：${getCategoryMeta(targetNode.category).label}`,
-      `文件路径：${targetNode.sourcePath || 'Generated reference'}`,
-      `摘要：${targetNode.summary}`,
-      sourceSnippet ? `原文片段：\n${sourceSnippet}` : '',
-      neighborContext ? `邻近节点：\n${neighborContext}` : ''
+      `Current node: ${targetNode.name}`,
+      `Category: ${getCategoryMeta(targetNode.category).label}`,
+      `File path: ${targetNode.sourcePath || 'Generated reference'}`,
+      `Summary: ${targetNode.summary}`,
+      sourceSnippet ? `Source excerpt: \n${sourceSnippet}` : '',
+      neighborContext ? `Neighboring nodes: \n${neighborContext}` : ''
     ].filter(Boolean).join('\n\n');
   };
 
   const getNodeMessages = (nodeId) => (
-    messagesByNode[nodeId] || [{ role: 'agent', text: '可以围绕这个节点和它的邻近知识继续追问。' }]
+    messagesByNode[nodeId] || [{ role: 'agent', text: 'Ask follow-up questions about this node and its related knowledge.' }]
   );
 
   const setNodeMessages = (nodeId, updater) => {
     setMessagesByNode((current) => {
-      const previous = current[nodeId] || [{ role: 'agent', text: '可以围绕这个节点和它的邻近知识继续追问。' }];
+      const previous = current[nodeId] || [{ role: 'agent', text: 'Ask follow-up questions about this node and its related knowledge.' }];
       return {
         ...current,
         [nodeId]: typeof updater === 'function' ? updater(previous) : updater
@@ -955,7 +955,7 @@ function App() {
         setChatNode(null);
       }
       const errorText = await response.text();
-      throw new Error(errorText || `Hermes API 请求失败：${response.status}`);
+      throw new Error(errorText || `Hermes API request failed: ${response.status}`);
     }
 
     return readHermesResponse(response, onChunk);
@@ -975,7 +975,7 @@ function App() {
 
     const summary = chatSummaries[targetNode.id];
     const historyContext = summary?.conversations?.length
-      ? `之前的对话概要：\n${summary.conversations.map((c, i) => `- 用户问过：${c.userQuestion}；AI 回答了：${c.aiSummary}`).join('\n')}`
+      ? `Previous conversation summary: \n${summary.conversations.map((c, i) => `- User asked: ${c.userQuestion}; AI answered: ${c.aiSummary}`).join('\n')}`
       : '';
 
     try {
@@ -986,12 +986,12 @@ function App() {
 
       await streamHermesAnswer({
         targetNode,
-        userText: `用户问题：${text}`,
+        userText: `User question: ${text}`,
         systemPrompt: [
-          '你是 Second Brain 知识图谱中的 Hermes Agent。请基于当前节点、原文片段和邻近节点回答用户问题。回答要清晰、可读、偏知识沉淀，支持 Markdown。',
-          '当前是只读对话模式：不要创建、修改、删除任何文件，不要写入 llm-wiki，也不要调用会改变本地文件或知识库状态的工具。如果用户要求保存、写入或生成新 wiki 文件，请提醒用户使用界面中的“保存到 Wiki”按钮。',
+          'You are the Hermes Agent in the Second Brain knowledge graph. Answer questions using the current node, source excerpts, and neighboring nodes. Provide clear, readable, knowledge-focused answers with Markdown support.',
+          'This conversation is read-only: do not create, modify, or delete files, write to llm-wiki, or use tools that change local files or the knowledge base. If the user asks to save, write, or generate a wiki file, remind them to use the Save to Wiki button.',
           historyContext,
-          '如果用户的问题与之前的讨论相关，请在此基础上继续深入，避免重复已给出的信息。'
+          'If the question relates to an earlier discussion, build on it and avoid repeating information already provided.'
         ].filter(Boolean).join('\n\n'),
         recentMessages,
         onChunk: (_chunk, fullText) => {
@@ -1001,9 +1001,9 @@ function App() {
         }
       });
     } catch (error) {
-      setChatError(error.message || 'Hermes API 请求失败，请检查服务地址、Key 和 CORS 设置。');
+      setChatError(error.message || 'The Hermes API request failed. Check the service URL, API key, and CORS settings.');
       setNodeMessages(targetNode.id, (current) => current.map((message, index) => (
-        index === current.length - 1 ? { ...message, text: 'Hermes API 请求失败，请检查服务地址、Key 和服务状态。' } : message
+        index === current.length - 1 ? { ...message, text: 'The Hermes API request failed. Check the service URL, API key, and service status.' } : message
       )));
     } finally {
       saveChatHistory(targetNode.id);
@@ -1018,14 +1018,14 @@ function App() {
 
     setNodeMessages(targetNode.id, (current) => [
       ...current,
-      { role: 'system', text: '正在将本次对话提炼为 Wiki 洞察文件，写入 llm-wiki 知识库...' },
+      { role: 'system', text: 'Summarizing this conversation into a Wiki insight file in llm-wiki...' },
       { role: 'agent', text: '' }
     ]);
 
     try {
       const nodeMessages = getNodeMessages(targetNode.id);
       const transcript = nodeMessages.map((message) => (
-        message.role === 'agent' ? `Hermes：${message.text}` : message.role === 'user' ? `用户：${message.text}` : `[系统] ${message.text}`
+        message.role === 'agent' ? `Hermes: ${message.text}` : message.role === 'user' ? `User: ${message.text}` : `[System] ${message.text}`
       )).join('\n\n');
 
       const recentMessages = nodeMessages.slice(-12).map((message) => ({
@@ -1036,15 +1036,15 @@ function App() {
       await streamHermesAnswer({
         targetNode,
         userText: [
-          '任务：请调用你可用的文件/工具能力，在当前 Hermes llm-wiki 存储目录中创建一个新的 Markdown 洞察文件。',
-          '要求：',
-          '- 文件应该放在适合的 insights / notes / 相关类别目录下；如果需要，请根据当前节点文件路径推断 llm-wiki 根目录。',
-          '- Markdown 文件需要包含标题、背景、关键洞察、关联节点、后续行动。',
-          '- 写入完成后，请回复文件路径和简短摘要。',
-          '本批对话：',
+          'Task: Use your available file tools to create a new Markdown insight file in the current Hermes llm-wiki directory.',
+          'Requirements:',
+          '- Place the file in an appropriate insights, notes, or related category directory. If necessary, infer the llm-wiki root from the current node path.',
+          '- The Markdown file must include a title, background, key insights, related nodes, and next steps.',
+          '- After writing the file, return its path and a brief summary.',
+          'Conversation:',
           transcript
         ].join('\n'),
-        systemPrompt: '你是 Second Brain 的 Hermes Agent。用户明确要求把当前节点上下文和这一批对话沉淀进 llm-wiki。请优先使用可用工具创建 Markdown 文件，而不是只返回文本。如果工具不可用，请说明原因，并给出可写入的 Markdown 内容。',
+        systemPrompt: 'You are the Hermes Agent for Second Brain. The user explicitly requested saving the current node context and this conversation to llm-wiki. Use available tools to create a Markdown file instead of only returning text. If tools are unavailable, explain why and provide Markdown content that can be saved.',
         recentMessages,
         onChunk: (_chunk, fullText) => {
           setNodeMessages(targetNode.id, (current) => current.map((message, index) => (
@@ -1053,9 +1053,9 @@ function App() {
         }
       });
     } catch (error) {
-      setChatError(error.message || '洞察文件生成失败，请检查 Hermes 工具权限和 llm-wiki 路径。');
+      setChatError(error.message || 'The insight file could not be generated. Check Hermes tool permissions and the llm-wiki path.');
       setNodeMessages(targetNode.id, (current) => current.map((message, index) => (
-        index === current.length - 1 ? { ...message, text: '洞察文件生成失败，请检查 Hermes 工具权限和 llm-wiki 路径。' } : message
+        index === current.length - 1 ? { ...message, text: 'The insight file could not be generated. Check Hermes tool permissions and the llm-wiki path.' } : message
       )));
     } finally {
       saveChatHistory(targetNode.id);
@@ -1081,7 +1081,7 @@ function App() {
           onKeyDown={handleGraphKeyDown}
           onMouseDown={() => graphHostRef.current?.focus()}
           onTouchStart={() => graphHostRef.current?.focus()}
-          aria-label={graphMode === GRAPH_MODES.THREE_D ? '3D 第二大脑知识图谱' : '2D 第二大脑知识图谱'}
+          aria-label={graphMode === GRAPH_MODES.THREE_D ? '3D Second Brain knowledge graph' : '2D Second Brain knowledge graph'}
         />
       </div>
 
@@ -1097,63 +1097,63 @@ function App() {
         </button>
         <div className="search-box" role="search">
           <Search size={18} aria-hidden="true" />
-          <input aria-label="搜索第二大脑" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="搜索第二大脑中的任意关键词..." />
+          <input aria-label="Search Second Brain" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search Second Brain..." />
           {query && (
-            <button type="button" className="search-clear" onClick={() => setQuery('')} aria-label="清除搜索内容">
+            <button type="button" className="search-clear" onClick={() => setQuery('')} aria-label="Clear search">
               <X size={15} />
             </button>
           )}
         </div>
-        <div className="time-filter" aria-label="时间过滤">
+        <div className="time-filter" aria-label="Date filter">
           <CalendarDays size={17} aria-hidden="true" />
           <label>
-            <span>开始</span>
+            <span>Start</span>
             <input
               type="date"
               value={dateRange.start}
               max={dateRange.end || undefined}
               onChange={(event) => setDateRange((current) => ({ ...current, start: event.target.value }))}
-              aria-label="开始日期"
+              aria-label="Start date"
             />
           </label>
           <span className="time-filter-separator">-</span>
           <label>
-            <span>结束</span>
+            <span>End</span>
             <input
               type="date"
               value={dateRange.end}
               min={dateRange.start || undefined}
               onChange={(event) => setDateRange((current) => ({ ...current, end: event.target.value }))}
-              aria-label="结束日期"
+              aria-label="End date"
             />
           </label>
           {(dateRange.start || dateRange.end) && (
-            <button type="button" onClick={() => setDateRange({ start: '', end: '' })} aria-label="清除时间过滤">
+            <button type="button" onClick={() => setDateRange({ start: '', end: '' })} aria-label="Clear date filter">
               <X size={14} />
             </button>
           )}
-          {!dateRange.start && !dateRange.end && <small>全部时间</small>}
-          <small className="time-filter-count" title="当前过滤后的节点数">
+          {!dateRange.start && !dateRange.end && <small>All time</small>}
+          <small className="time-filter-count" title="Number of filtered nodes">
             {filteredGraph.nodes.length}
           </small>
         </div>
         <button
           className={`graph-mode-button ${graphMode === GRAPH_MODES.THREE_D ? 'is-3d' : 'is-2d'}`}
           onClick={toggleGraphMode}
-          aria-label={graphMode === GRAPH_MODES.THREE_D ? '切换到 2D 图谱' : '切换到 3D 图谱'}
-          title={graphMode === GRAPH_MODES.THREE_D ? '切换到 2D 图谱' : '切换到 3D 图谱'}
+          aria-label={graphMode === GRAPH_MODES.THREE_D ? 'Switch to 2D graph' : 'Switch to 3D graph'}
+          title={graphMode === GRAPH_MODES.THREE_D ? 'Switch to 2D graph' : 'Switch to 3D graph'}
         >
           <Network size={18} />
           <span>{graphMode === GRAPH_MODES.THREE_D ? '3D' : '2D'}</span>
         </button>
-        <button className="theme-button" onClick={toggleTheme} aria-label={theme === 'dark' ? '切换浅色模式' : '切换暗色模式'}>
+        <button className="theme-button" onClick={toggleTheme} aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}>
           {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
         </button>
-        <button className="restore-button" onClick={restoreGraph} aria-label="适配当前图谱视图" title="适配当前图谱视图">
+        <button className="restore-button" onClick={restoreGraph} aria-label="Fit graph to view" title="Fit graph to view">
           <RotateCcw size={18} />
         </button>
         <div className="user-menu">
-          <button className="avatar-button" onClick={() => setIsUserMenuOpen((value) => !value)} aria-label="用户菜单">
+          <button className="avatar-button" onClick={() => setIsUserMenuOpen((value) => !value)} aria-label="User menu">
             {authUser.name.slice(0, 1).toUpperCase()}
           </button>
           {isUserMenuOpen && (
@@ -1167,20 +1167,20 @@ function App() {
                 setIsUserMenuOpen(false);
               }}>
                 <KeyRound size={16} />
-                修改密码
+                Change password
               </button>
               <button onClick={handleLogout}>
                 <LogOut size={16} />
-                退出登录
+                Log out
               </button>
             </div>
           )}
         </div>
       </header>
 
-      {graphStatus === 'loading' && <div className="graph-status">正在加载第二大脑图谱...</div>}
-      {graphStatus === 'error' && <div className="graph-status">图谱加载失败，请检查服务端 llm-wiki 配置。</div>}
-      {graphStatus === 'empty' && <div className="graph-status">当前 wiki 没有可显示节点，请检查 HERMES_WIKI_DIR 或添加 Markdown / 文档文件。</div>}
+      {graphStatus === 'loading' && <div className="graph-status">Loading the Second Brain graph...</div>}
+      {graphStatus === 'error' && <div className="graph-status">The graph could not load. Check the server llm-wiki configuration.</div>}
+      {graphStatus === 'empty' && <div className="graph-status">This wiki has no nodes to display. Check HERMES_WIKI_DIR or add Markdown or document files.</div>}
       {graphNotice && <div className="graph-mode-status">{graphNotice}</div>}
 
       <aside className="legend-dock" aria-label="Knowledge categories">
@@ -1204,25 +1204,25 @@ function App() {
           className={`legend-dot legend-more ${isCategoryPanelOpen ? 'is-active' : ''}`}
           style={{ '--cat': '#16f2b3' }}
           onClick={() => setIsCategoryPanelOpen((value) => !value)}
-          aria-label="打开类别筛选"
+          aria-label="Open category filter"
         >
           <SlidersHorizontal size={17} />
           {hiddenCategoryCount > 0 && <span className="legend-count">+{hiddenCategoryCount}</span>}
-          <span className="tag-tooltip">类别筛选</span>
+          <span className="tag-tooltip">Category filter</span>
         </button>
         {isCategoryPanelOpen && (
           <div className="category-popover">
             <div className="category-popover-head">
-              <strong>类别筛选</strong>
+              <strong>Category filter</strong>
               <span>{activeCats.size}/{categoryKeys.length}</span>
             </div>
             <label className="category-search">
               <Search size={15} />
-              <input value={categoryQuery} onChange={(event) => setCategoryQuery(event.target.value)} placeholder="搜索类别" />
+              <input value={categoryQuery} onChange={(event) => setCategoryQuery(event.target.value)} placeholder="Search categories" />
             </label>
             <div className="category-actions">
-              <button type="button" onClick={selectAllCategories}>全选</button>
-              <button type="button" onClick={clearAllCategories}>清空</button>
+              <button type="button" onClick={selectAllCategories}>Select all</button>
+              <button type="button" onClick={clearAllCategories}>Clear all</button>
             </div>
             <div className="category-list">
               {filteredCategoryStats.map(({ key, count, meta }) => {
@@ -1267,7 +1267,7 @@ function App() {
         <button
           className={`ai-fab ${isFull ? 'is-full' : ''}`}
           onClick={() => setChatNode(selectedNode)}
-          aria-label="打开节点 AI 对话"
+          aria-label="Open node AI chat"
           style={{ '--node-color': getCategoryMeta(selectedNode.category).color }}
         >
           <MessageCircle size={22} />
@@ -1344,7 +1344,7 @@ function LoginPage({ theme, onToggleTheme, onLogin }) {
     const name = String(form.get('name') || '').trim();
     const password = String(form.get('password') || '').trim();
     if (!name || !password) {
-      setError('请输入用户名和密码。');
+      setError('Enter your username and password.');
       return;
     }
     setIsSubmitting(true);
@@ -1352,7 +1352,7 @@ function LoginPage({ theme, onToggleTheme, onLogin }) {
     try {
       await onLogin({ name, password });
     } catch (error) {
-      setError(error.message || '登录失败。');
+      setError(error.message || 'Login failed.');
     } finally {
       setIsSubmitting(false);
     }
@@ -1360,7 +1360,7 @@ function LoginPage({ theme, onToggleTheme, onLogin }) {
 
   return (
     <main className="app-shell login-shell" data-theme={theme}>
-      <button className="login-theme-button" onClick={onToggleTheme} aria-label={theme === 'dark' ? '切换浅色模式' : '切换暗色模式'}>
+      <button className="login-theme-button" onClick={onToggleTheme} aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}>
         {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
       </button>
       <section className="login-card">
@@ -1373,17 +1373,17 @@ function LoginPage({ theme, onToggleTheme, onLogin }) {
         </div>
         <form onSubmit={submitLogin} className="login-form">
           <label>
-            用户名
-            <input name="name" autoComplete="username" placeholder="请输入用户名" />
+            Username
+            <input name="name" autoComplete="username" placeholder="Enter your username" />
           </label>
           <label>
-            密码
-            <input name="password" type="password" autoComplete="current-password" placeholder="请输入密码" />
+            Password
+            <input name="password" type="password" autoComplete="current-password" placeholder="Enter your password" />
           </label>
           {error && <p className="form-error">{error}</p>}
           <button type="submit" disabled={isSubmitting}>
             <User size={17} />
-            {isSubmitting ? '登录中...' : '登录'}
+            {isSubmitting ? 'Logging in...' : 'Log in'}
           </button>
         </form>
       </section>
@@ -1403,7 +1403,7 @@ function PasswordDialog({ onClose }) {
     const next = String(formData.get('next') || '').trim();
     const confirm = String(formData.get('confirm') || '').trim();
     if (!next || next !== confirm) {
-      setMessage('两次输入的新密码不一致。');
+      setMessage('The new passwords do not match.');
       return;
     }
     setIsSaving(true);
@@ -1416,11 +1416,11 @@ function PasswordDialog({ onClose }) {
         body: JSON.stringify({ current, next })
       });
       const data = await response.json();
-      if (!response.ok) throw new Error(data.error || '密码更新失败。');
-      setMessage('密码已更新。');
+      if (!response.ok) throw new Error(data.error || 'The password could not be updated.');
+      setMessage('Password updated.');
       form.reset();
     } catch (error) {
-      setMessage(error.message || '密码更新失败。');
+      setMessage(error.message || 'The password could not be updated.');
     } finally {
       setIsSaving(false);
     }
@@ -1428,33 +1428,33 @@ function PasswordDialog({ onClose }) {
 
   return (
     <div className="modal-backdrop">
-      <section className="password-dialog" role="dialog" aria-label="修改密码">
+      <section className="password-dialog" role="dialog" aria-label="Change password">
         <div className="dialog-head">
           <div>
-            <strong>修改密码</strong>
-            <span>更新当前账号的登录凭据</span>
+            <strong>Change password</strong>
+            <span>Update the login credentials for this account</span>
           </div>
-          <button className="icon-button" onClick={onClose} aria-label="关闭修改密码">
+          <button className="icon-button" onClick={onClose} aria-label="Close password dialog">
             <X size={18} />
           </button>
         </div>
         <form onSubmit={submitPassword} className="login-form">
           <label>
-            当前密码
+            Current password
             <input name="current" type="password" autoComplete="current-password" />
           </label>
           <label>
-            新密码
+            New password
             <input name="next" type="password" autoComplete="new-password" />
           </label>
           <label>
-            确认新密码
+            Confirm new password
             <input name="confirm" type="password" autoComplete="new-password" />
           </label>
           {message && <p className="form-error">{message}</p>}
           <button type="submit" disabled={isSaving}>
             <KeyRound size={17} />
-            {isSaving ? '保存中...' : '保存'}
+            {isSaving ? 'Saving...' : 'Save'}
           </button>
         </form>
       </section>
@@ -1532,20 +1532,20 @@ function NodePanel({ node, neighbors, isFull, onClose, onCloseFull, onFull, onFo
             <div className="full-column-left">
               {shouldShowArticle && (
                 <article className="summary markdown-body">
-                  {sourceStatus === 'loading' ? '正在读取原文...' : (
+                  {sourceStatus === 'loading' ? 'Loading source...' : (
                     <MarkdownContent content={readableContent} />
                   )}
-                  {sourceStatus === 'error' && <p>原文读取失败，当前显示摘要。</p>}
+                  {sourceStatus === 'error' && <p>The source could not be loaded. Showing the summary.</p>}
                 </article>
               )}
               {!shouldShowArticle && sourceStatus === 'loading' && (
-                <article className="summary markdown-body">正在读取原文...</article>
+                <article className="summary markdown-body">Loading source...</article>
               )}
               {sourceAssets.length > 0 && (
                 <SourceAssetGallery
                   assets={sourceAssets}
                   isFull={isFull}
-                  title={node.asset ? '源文件' : '相关源文件'}
+                  title={node.asset ? 'Source file' : 'Related source files'}
                   variant={node.asset ? 'primary' : 'attachments'}
                 />
               )}
@@ -1553,7 +1553,7 @@ function NodePanel({ node, neighbors, isFull, onClose, onCloseFull, onFull, onFo
           )}
           <div className="full-column-right">
             <section className="neighbor-section">
-              <div className="section-title">邻近节点</div>
+              <div className="section-title">Neighboring nodes</div>
               <div className="neighbor-list">
                 {neighbors.map((neighbor) => {
                   const neighborCat = getCategoryMeta(neighbor.category);
@@ -1573,8 +1573,8 @@ function NodePanel({ node, neighbors, isFull, onClose, onCloseFull, onFull, onFo
         <>
           {shouldShowArticle && (
             <article className="summary">
-              {sourceStatus === 'loading' ? '正在读取原文...' : readableContent}
-              {sourceStatus === 'error' && <p>原文读取失败，当前显示摘要。</p>}
+              {sourceStatus === 'loading' ? 'Loading source...' : readableContent}
+              {sourceStatus === 'error' && <p>The source could not be loaded. Showing the summary.</p>}
             </article>
           )}
 
@@ -1582,13 +1582,13 @@ function NodePanel({ node, neighbors, isFull, onClose, onCloseFull, onFull, onFo
             <SourceAssetGallery
               assets={sourceAssets}
               isFull={isFull}
-              title={node.asset ? '源文件' : '相关源文件'}
+              title={node.asset ? 'Source file' : 'Related source files'}
               variant={node.asset ? 'primary' : 'attachments'}
             />
           )}
 
           <section className="neighbor-section">
-            <div className="section-title">邻近节点</div>
+            <div className="section-title">Neighboring nodes</div>
             <div className="neighbor-list">
               {neighbors.map((neighbor) => {
                 const neighborCat = getCategoryMeta(neighbor.category);
@@ -1622,7 +1622,7 @@ function SourceAssetGallery({ assets, isFull, title, variant }) {
   );
 }
 
-function SourceAssetPreview({ asset, isFull, label = '源文件' }) {
+function SourceAssetPreview({ asset, isFull, label = 'Source file' }) {
   const [textContent, setTextContent] = useState('');
   const [textStatus, setTextStatus] = useState('idle');
   const canInlineText = ['text', 'markdown'].includes(asset.previewType);
@@ -1658,18 +1658,18 @@ function SourceAssetPreview({ asset, isFull, label = '源文件' }) {
   }, [asset.previewType, asset.url, canInlineText, isFull]);
 
   const renderPreview = () => {
-    if (!isFull) return <p>最大化后可在节点内预览或下载这个文件。</p>;
+    if (!isFull) return <p>Maximize this panel to preview or download the file.</p>;
     if (asset.previewType === 'image') return <img src={asset.url} alt={asset.fileName} />;
     if (asset.previewType === 'video') return <video src={asset.url} controls preload="metadata" />;
     if (asset.previewType === 'audio') return <audio src={asset.url} controls preload="metadata" />;
     if (asset.previewType === 'pdf') return <iframe src={asset.url} title={asset.fileName} />;
     if (canInlineText) {
-      if (textStatus === 'loading') return <p>正在读取源文件...</p>;
-      if (textStatus === 'error') return <p>源文件预览失败，可以下载后查看。</p>;
+      if (textStatus === 'loading') return <p>Loading source file...</p>;
+      if (textStatus === 'error') return <p>The source preview could not load. Download the file to view it.</p>;
       if (asset.previewType === 'markdown') return <div className="markdown-body"><MarkdownContent content={textContent} /></div>;
       return <pre>{textContent}</pre>;
     }
-    return <p>这个文件类型暂不支持浏览器内预览，可以直接下载后查看。</p>;
+    return <p>This file type cannot be previewed in the browser. Download it to view it.</p>;
   };
 
   return (
@@ -1681,13 +1681,13 @@ function SourceAssetPreview({ asset, isFull, label = '源文件' }) {
           <small>{asset.mimeType} · {asset.sizeLabel}</small>
         </div>
         <div className="source-asset-actions">
-          <a href={asset.url} target="_blank" rel="noreferrer" title="新窗口打开源文件">
+          <a href={asset.url} target="_blank" rel="noreferrer" title="Open source file in a new window">
             <ArrowUpRight size={16} />
-            打开
+            Open
           </a>
-          <a href={asset.downloadUrl} download title="下载源文件">
+          <a href={asset.downloadUrl} download title="Download source file">
             <FileText size={16} />
-            下载
+            Download
           </a>
         </div>
       </div>
@@ -1706,14 +1706,14 @@ function ChatModal({ node, messages, summary, isSending, isGeneratingInsight, er
   const messagesRef = useRef(null);
   const isNearBottomRef = useRef(true);
 
-  // 打开窗口 / 切换布局时强制滚到底部
+  // Scroll to the bottom when opening the window or changing the layout.
   useEffect(() => {
     const el = messagesRef.current;
     if (el) el.scrollTop = el.scrollHeight;
     isNearBottomRef.current = true;
   }, [isMaximized, showHistory]);
 
-  // 流式输出时跟随最新消息（用户主动上滑则暂停跟随）
+  // Follow new messages while streaming; pause when the user scrolls up.
   useEffect(() => {
     const el = messagesRef.current;
     if (el && isNearBottomRef.current) el.scrollTop = el.scrollHeight;
@@ -1727,17 +1727,17 @@ function ChatModal({ node, messages, summary, isSending, isGeneratingInsight, er
 
   return (
     <div className="chat-modal-backdrop" style={{ '--node-color': getCategoryMeta(node.category).color }}>
-      <div className={`chat-popover ${isMaximized ? 'is-maximized' : ''}`} role="dialog" aria-modal="true" aria-label="节点 AI 对话">
+      <div className={`chat-popover ${isMaximized ? 'is-maximized' : ''}`} role="dialog" aria-modal="true" aria-label="Node AI chat">
         <div className="chat-popover-head">
           <div>
-            <strong>AI 对话</strong>
+            <strong>AI chat</strong>
             <span>{node.name}</span>
           </div>
           <div className="chat-window-actions">
-            <button className="icon-button" onClick={() => setIsMaximized((value) => !value)} aria-label={isMaximized ? '缩小聊天窗口' : '最大化聊天窗口'}>
+            <button className="icon-button" onClick={() => setIsMaximized((value) => !value)} aria-label={isMaximized ? 'Restore chat window' : 'Maximize chat window'}>
               {isMaximized ? <Minimize2 size={17} /> : <Maximize2 size={17} />}
             </button>
-            <button className="icon-button" onClick={onClose} aria-label="关闭节点 AI 对话">
+            <button className="icon-button" onClick={onClose} aria-label="Close node AI chat">
               <X size={17} />
             </button>
           </div>
@@ -1747,8 +1747,8 @@ function ChatModal({ node, messages, summary, isSending, isGeneratingInsight, er
           <div className="chat-history-bar">
             <button className="history-toggle" onClick={() => setShowHistory((v) => !v)}>
               <MessageCircle size={14} />
-              {summary.totalMessages > 0 && <span className="history-count">{summary.totalMessages} 条历史消息，{summary.conversations.length} 轮对话</span>}
-              {!summary.totalMessages && <span>有历史对话</span>}
+              {summary.totalMessages > 0 && <span className="history-count">{summary.totalMessages} past messages, {summary.conversations.length} conversations</span>}
+              {!summary.totalMessages && <span>Previous conversations available</span>}
             </button>
           </div>
         )}
@@ -1758,7 +1758,7 @@ function ChatModal({ node, messages, summary, isSending, isGeneratingInsight, er
             {summary.conversations.map((conv, i) => (
               <div key={i} className="history-conversation">
                 <div className="history-user">
-                  <strong>用户：</strong>
+                  <strong>User: </strong>
                   <span>{conv.userQuestion}</span>
                 </div>
                 {conv.aiSummary && (
@@ -1775,19 +1775,19 @@ function ChatModal({ node, messages, summary, isSending, isGeneratingInsight, er
         <div className="messages" ref={messagesRef} onScroll={handleMessagesScroll}>
           {(isMaximized ? messages : messages.slice(-4)).map((message, index) => (
             <div key={`${message.role}-${index}`} className={`message ${message.role}`}>
-              <MarkdownContent content={message.text || (message.role === 'agent' ? '正在思考...' : '')} />
+              <MarkdownContent content={message.text || (message.role === 'agent' ? 'Thinking...' : '')} />
             </div>
           ))}
         </div>
         {error && <div className="chat-error">{error}</div>}
         <div className="chat-toolbar">
-          <button type="button" title="将当前对话提炼为 Markdown 洞察文件，写入 llm-wiki 知识库。AI 会分析对话内容并生成结构化文档。" onClick={() => onGenerateInsight(node)} disabled={busy}>
+          <button type="button" title="Save this conversation as a Markdown insight file in llm-wiki. AI will analyze the conversation and generate a structured document." onClick={() => onGenerateInsight(node)} disabled={busy}>
             {isGeneratingInsight ? <Command size={15} /> : <BookUp2 size={15} />}
-            保存到 Wiki
+            Save to Wiki
           </button>
         </div>
         <form onSubmit={(event) => onSend(event, node)} className="chat-form">
-          <input name="message" placeholder={`向 ${node.name} 提问...`} autoComplete="off" disabled={busy} />
+          <input name="message" placeholder={`Ask ${node.name}...`} autoComplete="off" disabled={busy} />
           <button type="submit" aria-label="Send" disabled={busy}>
             {isSending ? <Command size={17} /> : <Send size={17} />}
           </button>

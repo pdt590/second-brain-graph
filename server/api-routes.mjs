@@ -3,8 +3,8 @@ import { readChatHistory, summarizeChatHistory, writeChatHistory } from './chat-
 import { sendJson } from './auth.mjs';
 
 /**
- * 共享业务路由：dev（Vite 中间件）与生产（second-brain-server.mjs）共用。
- * 认证守卫由调用方负责；handle 返回 true 表示已处理该路由。
+ * Shared application routes for development (Vite middleware) and production (second-brain-server.mjs).
+ * The caller handles authentication; handle returns true when a route has been handled.
  */
 export function createApiRoutes({ indexer, stateRootDir }) {
   async function handleChatHistory(request, response, url) {
