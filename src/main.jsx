@@ -26,6 +26,8 @@ import {
   X
 } from 'lucide-react';
 import './styles.css';
+import WikiFolderDialog from './WikiFolderDialog.jsx';
+import useModalFocus from './useModalFocus.js';
 
 const categoryPalette = ['#16f2b3', '#45a8ff', '#ffcc4d', '#ff7a45', '#ff5d9e', '#7c6dff', '#34d399', '#f472b6', '#22d3ee', '#a3e635'];
 const HERMES_CHAT_COMPLETIONS_URL = '/api/hermes/v1/chat/completions';
@@ -330,7 +332,7 @@ async function readNodeSourceSnippet(node, maxLength = 6000) {
     const response = await fetch(node.contentUrl, { cache: 'no-store' });
     if (!response.ok) return '';
     const text = stripFrontmatter(await response.text()).trim();
-    return text.length > maxLength ? `${text.slice(0, maxLength)}\n...` : text;
+    return text.length > maxLength ? `${text.slice(0, maxLength)}\n…` : text;
   } catch {
     return '';
   }
@@ -357,10 +359,33 @@ function App() {
     if (stored === 'light' || stored === 'dark') return stored;
     return 'dark';
   });
+  useEffect(() => {
+    document.documentElement.style.colorScheme = theme;
+    document.querySelector('meta[name="theme-color"]')?.setAttribute('content', theme === 'dark' ? '#020408' : '#f4f8f8');
+  }, [theme]);
   const [authUser, setAuthUser] = useState(null);
   const [authStatus, setAuthStatus] = useState('checking');
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+  useEffect(() => {
+    if (!isUserMenuOpen) return;
+    const dismiss = (event) => {
+      if (event.type === 'keydown' && event.key === 'Escape') {
+        setIsUserMenuOpen(false);
+        document.querySelector('[aria-label="User menu"]')?.focus();
+      } else if (event.type === 'pointerdown' && !event.target.closest('.user-menu')) {
+        setIsUserMenuOpen(false);
+      }
+    };
+    document.addEventListener('keydown', dismiss);
+    document.addEventListener('pointerdown', dismiss);
+    return () => {
+      document.removeEventListener('keydown', dismiss);
+      document.removeEventListener('pointerdown', dismiss);
+    };
+  }, [isUserMenuOpen]);
   const [isPasswordOpen, setIsPasswordOpen] = useState(false);
+  const [isWikiFolderOpen, setIsWikiFolderOpen] = useState(false);
+  const [wikiRevision, setWikiRevision] = useState(0);
   const [query, setQuery] = useState('');
   const [selectedId, setSelectedId] = useState('');
   const selectedIdRef = useRef('');
@@ -701,7 +726,7 @@ function App() {
       cancelled = true;
       events.close();
     };
-  }, [authUser]);
+  }, [authUser, wikiRevision]);
 
   useEffect(() => {
     if (!authUser) return undefined;
@@ -1018,7 +1043,7 @@ function App() {
 
     setNodeMessages(targetNode.id, (current) => [
       ...current,
-      { role: 'system', text: 'Summarizing this conversation into a Wiki insight file in llm-wiki...' },
+      { role: 'system', text: 'Summarizing this conversation into a Wiki insight file in llm-wiki…' },
       { role: 'agent', text: '' }
     ]);
 
@@ -1072,10 +1097,13 @@ function App() {
   }
 
   return (
-    <main className="app-shell" data-theme={theme}>
+    <main id="main-content" tabIndex={-1} className="app-shell" data-theme={theme}>
+      <a className="skip-link" href="#graph-content">Skip to knowledge graph</a>
       <div className="graph-stage">
         <div
           ref={graphHostRef}
+          id="graph-content"
+          aria-describedby="graph-keyboard-help"
           className={`force-graph-host is-${graphMode}`}
           tabIndex={0}
           onKeyDown={handleGraphKeyDown}
@@ -1084,6 +1112,15 @@ function App() {
           aria-label={graphMode === GRAPH_MODES.THREE_D ? '3D Second Brain knowledge graph' : '2D Second Brain knowledge graph'}
         />
       </div>
+
+      <label className="graph-node-picker">
+        Select a graph node
+        <select name="graph-node" value={selectedNode?.id || ''} onChange={(event) => focusNode(nodesById.get(event.target.value))} disabled={!graph.nodes.length}>
+          {!graph.nodes.length && <option value="">No nodes available</option>}
+          {graph.nodes.map((node) => <option key={node.id} value={node.id}>{node.name}</option>)}
+        </select>
+      </label>
+      <p id="graph-keyboard-help" className="visually-hidden">Use arrow keys to navigate the 3D graph, plus or minus to zoom, and zero to fit the graph. Use Select a graph node to open a file with the keyboard.</p>
 
       <header className="topbar">
         <button className="brand" onClick={() => focusNode(graph.nodes[0])} aria-label="Focus Hermes Agent" disabled={!graph.nodes.length}>
@@ -1096,24 +1133,25 @@ function App() {
           </span>
         </button>
         <div className="search-box" role="search">
-          <Search size={18} aria-hidden="true" />
-          <input aria-label="Search Second Brain" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search Second Brain..." />
+          <Search aria-hidden="true" size={18} aria-hidden="true" />
+          <input name="search" autoComplete="off" type="search" aria-label="Search Second Brain" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search Second Brain…" />
           {query && (
             <button type="button" className="search-clear" onClick={() => setQuery('')} aria-label="Clear search">
-              <X size={15} />
+              <X aria-hidden="true" size={15} />
             </button>
           )}
         </div>
         <div className="time-filter" aria-label="Date filter">
-          <CalendarDays size={17} aria-hidden="true" />
+          <CalendarDays aria-hidden="true" size={17} aria-hidden="true" />
           <label>
             <span>Start</span>
             <input
               type="date"
+              autoComplete="off"
               value={dateRange.start}
               max={dateRange.end || undefined}
               onChange={(event) => setDateRange((current) => ({ ...current, start: event.target.value }))}
-              aria-label="Start date"
+              name="start-date" aria-label="Start date"
             />
           </label>
           <span className="time-filter-separator">-</span>
@@ -1121,15 +1159,16 @@ function App() {
             <span>End</span>
             <input
               type="date"
+              autoComplete="off"
               value={dateRange.end}
               min={dateRange.start || undefined}
               onChange={(event) => setDateRange((current) => ({ ...current, end: event.target.value }))}
-              aria-label="End date"
+              name="end-date" aria-label="End date"
             />
           </label>
           {(dateRange.start || dateRange.end) && (
             <button type="button" onClick={() => setDateRange({ start: '', end: '' })} aria-label="Clear date filter">
-              <X size={14} />
+              <X aria-hidden="true" size={14} />
             </button>
           )}
           {!dateRange.start && !dateRange.end && <small>All time</small>}
@@ -1143,17 +1182,17 @@ function App() {
           aria-label={graphMode === GRAPH_MODES.THREE_D ? 'Switch to 2D graph' : 'Switch to 3D graph'}
           title={graphMode === GRAPH_MODES.THREE_D ? 'Switch to 2D graph' : 'Switch to 3D graph'}
         >
-          <Network size={18} />
+          <Network aria-hidden="true" size={18} />
           <span>{graphMode === GRAPH_MODES.THREE_D ? '3D' : '2D'}</span>
         </button>
         <button className="theme-button" onClick={toggleTheme} aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}>
-          {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
+          {theme === 'dark' ? <Sun aria-hidden="true" size={18} /> : <Moon aria-hidden="true" size={18} />}
         </button>
         <button className="restore-button" onClick={restoreGraph} aria-label="Fit graph to view" title="Fit graph to view">
-          <RotateCcw size={18} />
+          <RotateCcw aria-hidden="true" size={18} />
         </button>
         <div className="user-menu">
-          <button className="avatar-button" onClick={() => setIsUserMenuOpen((value) => !value)} aria-label="User menu">
+          <button className="avatar-button" onKeyDown={(event) => { if (event.key === 'Escape') setIsUserMenuOpen(false); }} onClick={() => setIsUserMenuOpen((value) => !value)} aria-expanded={isUserMenuOpen} aria-label="User menu">
             {authUser.name.slice(0, 1).toUpperCase()}
           </button>
           {isUserMenuOpen && (
@@ -1166,11 +1205,15 @@ function App() {
                 setIsPasswordOpen(true);
                 setIsUserMenuOpen(false);
               }}>
-                <KeyRound size={16} />
+                <KeyRound aria-hidden="true" size={16} />
                 Change password
               </button>
+              <button onClick={() => { setIsWikiFolderOpen(true); setIsUserMenuOpen(false); }}>
+                <Folder aria-hidden="true" size={16} />
+                Choose Wiki Folder
+              </button>
               <button onClick={handleLogout}>
-                <LogOut size={16} />
+                <LogOut aria-hidden="true" size={16} />
                 Log out
               </button>
             </div>
@@ -1178,10 +1221,10 @@ function App() {
         </div>
       </header>
 
-      {graphStatus === 'loading' && <div className="graph-status">Loading the Second Brain graph...</div>}
-      {graphStatus === 'error' && <div className="graph-status">The graph could not load. Check the server llm-wiki configuration.</div>}
-      {graphStatus === 'empty' && <div className="graph-status">This wiki has no nodes to display. Check HERMES_WIKI_DIR or add Markdown or document files.</div>}
-      {graphNotice && <div className="graph-mode-status">{graphNotice}</div>}
+      {graphStatus === 'loading' && <div className="graph-status" role="status">Loading the Second Brain graph…</div>}
+      {graphStatus === 'error' && <div className="graph-status" role="status">The graph could not load. Check the server llm-wiki configuration.</div>}
+      {graphStatus === 'empty' && <div className="graph-status" role="status">This wiki has no nodes to display. Check HERMES_WIKI_DIR or add Markdown or document files.</div>}
+      {graphNotice && <div className="graph-mode-status" role="status">{graphNotice}</div>}
 
       <aside className="legend-dock" aria-label="Knowledge categories">
         {quickCategories.map(({ key, count, meta: cat }) => {
@@ -1206,7 +1249,7 @@ function App() {
           onClick={() => setIsCategoryPanelOpen((value) => !value)}
           aria-label="Open category filter"
         >
-          <SlidersHorizontal size={17} />
+          <SlidersHorizontal aria-hidden="true" size={17} />
           {hiddenCategoryCount > 0 && <span className="legend-count">+{hiddenCategoryCount}</span>}
           <span className="tag-tooltip">Category filter</span>
         </button>
@@ -1217,8 +1260,8 @@ function App() {
               <span>{activeCats.size}/{categoryKeys.length}</span>
             </div>
             <label className="category-search">
-              <Search size={15} />
-              <input value={categoryQuery} onChange={(event) => setCategoryQuery(event.target.value)} placeholder="Search categories" />
+              <Search aria-hidden="true" size={15} />
+              <input name="category" aria-label="Search categories" autoComplete="off" type="search" value={categoryQuery} onChange={(event) => setCategoryQuery(event.target.value)} placeholder="Search categories" />
             </label>
             <div className="category-actions">
               <button type="button" onClick={selectAllCategories}>Select all</button>
@@ -1270,7 +1313,7 @@ function App() {
           aria-label="Open node AI chat"
           style={{ '--node-color': getCategoryMeta(selectedNode.category).color }}
         >
-          <MessageCircle size={22} />
+          <MessageCircle aria-hidden="true" size={22} />
         </button>
       )}
 
@@ -1288,6 +1331,15 @@ function App() {
         />
       )}
 
+      {isWikiFolderOpen && <WikiFolderDialog onClose={() => setIsWikiFolderOpen(false)} onSelected={() => {
+        setIsWikiFolderOpen(false);
+        setQuery(''); setDateRange({ start: '', end: '' });
+        setSelectedId(''); setIsPanelOpen(false); setIsFull(false); setChatNode(null);
+        setMessagesByNode({}); setLoadedChatNodes(new Set()); setChatSummaries({});
+        previousCategoryKeysRef.current = new Set();
+        didInitialFitRef.current = false;
+        setWikiRevision((value) => value + 1);
+      }} />}
       {isPasswordOpen && <PasswordDialog onClose={() => setIsPasswordOpen(false)} />}
     </main>
   );
@@ -1340,9 +1392,10 @@ function LoginPage({ theme, onToggleTheme, onLogin }) {
 
   const submitLogin = async (event) => {
     event.preventDefault();
-    const form = new FormData(event.currentTarget);
+    const formElement = event.currentTarget;
+    const form = new FormData(formElement);
     const name = String(form.get('name') || '').trim();
-    const password = String(form.get('password') || '').trim();
+    const password = String(form.get('password') || '');
     if (!name || !password) {
       setError('Enter your username and password.');
       return;
@@ -1353,6 +1406,7 @@ function LoginPage({ theme, onToggleTheme, onLogin }) {
       await onLogin({ name, password });
     } catch (error) {
       setError(error.message || 'Login failed.');
+      formElement.elements.password.focus();
     } finally {
       setIsSubmitting(false);
     }
@@ -1361,7 +1415,7 @@ function LoginPage({ theme, onToggleTheme, onLogin }) {
   return (
     <main className="app-shell login-shell" data-theme={theme}>
       <button className="login-theme-button" onClick={onToggleTheme} aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}>
-        {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
+        {theme === 'dark' ? <Sun aria-hidden="true" size={18} /> : <Moon aria-hidden="true" size={18} />}
       </button>
       <section className="login-card">
         <div className="login-brand">
@@ -1374,16 +1428,16 @@ function LoginPage({ theme, onToggleTheme, onLogin }) {
         <form onSubmit={submitLogin} className="login-form">
           <label>
             Username
-            <input name="name" autoComplete="username" placeholder="Enter your username" />
+            <input name="name" required spellCheck={false} autoComplete="username" placeholder="Enter your username" />
           </label>
           <label>
             Password
-            <input name="password" type="password" autoComplete="current-password" placeholder="Enter your password" />
+            <input name="password" required type="password" autoComplete="current-password" placeholder="Enter your password" />
           </label>
-          {error && <p className="form-error">{error}</p>}
+          {error && <p className="form-error" role="alert">{error}</p>}
           <button type="submit" disabled={isSubmitting}>
-            <User size={17} />
-            {isSubmitting ? 'Logging in...' : 'Log in'}
+            <User aria-hidden="true" size={17} />
+            {isSubmitting ? 'Logging in…' : 'Log in'}
           </button>
         </form>
       </section>
@@ -1394,16 +1448,19 @@ function LoginPage({ theme, onToggleTheme, onLogin }) {
 function PasswordDialog({ onClose }) {
   const [message, setMessage] = useState('');
   const [isSaving, setIsSaving] = useState(false);
+  const dialogRef = useRef(null);
+  useModalFocus(dialogRef, onClose, true, isSaving);
 
   const submitPassword = async (event) => {
     event.preventDefault();
     const form = event.currentTarget;
     const formData = new FormData(form);
-    const current = String(formData.get('current') || '').trim();
-    const next = String(formData.get('next') || '').trim();
-    const confirm = String(formData.get('confirm') || '').trim();
+    const current = String(formData.get('current') || '');
+    const next = String(formData.get('next') || '');
+    const confirm = String(formData.get('confirm') || '');
     if (!next || next !== confirm) {
       setMessage('The new passwords do not match.');
+      form.elements.confirm.focus();
       return;
     }
     setIsSaving(true);
@@ -1428,33 +1485,33 @@ function PasswordDialog({ onClose }) {
 
   return (
     <div className="modal-backdrop">
-      <section className="password-dialog" role="dialog" aria-label="Change password">
+      <section ref={dialogRef} tabIndex={-1} className="password-dialog" role="dialog" aria-modal="true" aria-label="Change password">
         <div className="dialog-head">
           <div>
             <strong>Change password</strong>
             <span>Update the login credentials for this account</span>
           </div>
-          <button className="icon-button" onClick={onClose} aria-label="Close password dialog">
-            <X size={18} />
+          <button className="icon-button" onClick={onClose} disabled={isSaving} aria-label="Close password dialog">
+            <X aria-hidden="true" size={18} />
           </button>
         </div>
         <form onSubmit={submitPassword} className="login-form">
           <label>
             Current password
-            <input name="current" type="password" autoComplete="current-password" />
+            <input name="current" required type="password" autoComplete="current-password" />
           </label>
           <label>
             New password
-            <input name="next" type="password" autoComplete="new-password" />
+            <input name="next" required minLength={8} type="password" autoComplete="new-password" />
           </label>
           <label>
             Confirm new password
-            <input name="confirm" type="password" autoComplete="new-password" />
+            <input name="confirm" required minLength={8} type="password" autoComplete="new-password" />
           </label>
-          {message && <p className="form-error">{message}</p>}
+          {message && <p className="form-error" role="status" aria-live="polite">{message}</p>}
           <button type="submit" disabled={isSaving}>
-            <KeyRound size={17} />
-            {isSaving ? 'Saving...' : 'Save'}
+            <KeyRound aria-hidden="true" size={17} />
+            {isSaving ? 'Saving…' : 'Save'}
           </button>
         </form>
       </section>
@@ -1503,7 +1560,7 @@ function NodePanel({ node, neighbors, isFull, onClose, onCloseFull, onFull, onFo
   }, [isFull, node.contentUrl, node.id]);
 
   return (
-    <PanelTag className={`node-panel ${isFull ? 'is-full' : ''}`} style={{ '--node-color': cat.color }}>
+    <PanelTag aria-label="Node details" className={`node-panel ${isFull ? 'is-full' : ''}`} style={{ '--node-color': cat.color }}>
       <div className="panel-scanline" />
       <div className="panel-head">
         <div>
@@ -1512,10 +1569,10 @@ function NodePanel({ node, neighbors, isFull, onClose, onCloseFull, onFull, onFo
         </div>
         <div className="panel-actions">
           <button className="icon-button" onClick={isFull ? onCloseFull : onFull} aria-label={isFull ? 'Minimize node panel' : 'Maximize node panel'}>
-            {isFull ? <Minimize2 size={18} /> : <Maximize2 size={18} />}
+            {isFull ? <Minimize2 aria-hidden="true" size={18} /> : <Maximize2 aria-hidden="true" size={18} />}
           </button>
           <button className="icon-button" onClick={onClose} aria-label="Close node panel">
-            <X size={18} />
+            <X aria-hidden="true" size={18} />
           </button>
         </div>
       </div>
@@ -1531,15 +1588,15 @@ function NodePanel({ node, neighbors, isFull, onClose, onCloseFull, onFull, onFo
           {(shouldShowArticle || sourceAssets.length > 0) && (
             <div className="full-column-left">
               {shouldShowArticle && (
-                <article className="summary markdown-body">
-                  {sourceStatus === 'loading' ? 'Loading source...' : (
+                <article className={`summary markdown-body${/\.mdx?$/i.test(node.sourcePath || '') ? ' markdown-file-content' : ''}`}>
+                  {sourceStatus === 'loading' ? 'Loading source…' : (
                     <MarkdownContent content={readableContent} />
                   )}
                   {sourceStatus === 'error' && <p>The source could not be loaded. Showing the summary.</p>}
                 </article>
               )}
               {!shouldShowArticle && sourceStatus === 'loading' && (
-                <article className="summary markdown-body">Loading source...</article>
+                <article className={`summary markdown-body${/\.mdx?$/i.test(node.sourcePath || '') ? ' markdown-file-content' : ''}`}>Loading source…</article>
               )}
               {sourceAssets.length > 0 && (
                 <SourceAssetGallery
@@ -1561,7 +1618,7 @@ function NodePanel({ node, neighbors, isFull, onClose, onCloseFull, onFull, onFo
                     <button key={neighbor.id} onClick={() => onFocus(neighbor)} style={{ '--neighbor': neighborCat.color }}>
                       <span />
                       <strong>{neighbor.name}</strong>
-                      <ChevronRight size={16} />
+                      <ChevronRight aria-hidden="true" size={16} />
                     </button>
                   );
                 })}
@@ -1572,8 +1629,8 @@ function NodePanel({ node, neighbors, isFull, onClose, onCloseFull, onFull, onFo
       ) : (
         <>
           {shouldShowArticle && (
-            <article className="summary">
-              {sourceStatus === 'loading' ? 'Loading source...' : readableContent}
+            <article className={`summary${/\.mdx?$/i.test(node.sourcePath || '') ? ' markdown-file-content' : ''}`}>
+              {sourceStatus === 'loading' ? 'Loading source…' : readableContent}
               {sourceStatus === 'error' && <p>The source could not be loaded. Showing the summary.</p>}
             </article>
           )}
@@ -1596,7 +1653,7 @@ function NodePanel({ node, neighbors, isFull, onClose, onCloseFull, onFull, onFo
                   <button key={neighbor.id} onClick={() => onFocus(neighbor)} style={{ '--neighbor': neighborCat.color }}>
                     <span />
                     <strong>{neighbor.name}</strong>
-                    <ChevronRight size={16} />
+                    <ChevronRight aria-hidden="true" size={16} />
                   </button>
                 );
               })}
@@ -1659,12 +1716,12 @@ function SourceAssetPreview({ asset, isFull, label = 'Source file' }) {
 
   const renderPreview = () => {
     if (!isFull) return <p>Maximize this panel to preview or download the file.</p>;
-    if (asset.previewType === 'image') return <img src={asset.url} alt={asset.fileName} />;
-    if (asset.previewType === 'video') return <video src={asset.url} controls preload="metadata" />;
-    if (asset.previewType === 'audio') return <audio src={asset.url} controls preload="metadata" />;
+    if (asset.previewType === 'image') return <img src={asset.url} alt={asset.fileName} loading="lazy" decoding="async" />;
+    if (asset.previewType === 'video') return <video aria-label={asset.fileName} src={asset.url} controls preload="metadata" />;
+    if (asset.previewType === 'audio') return <audio aria-label={asset.fileName} src={asset.url} controls preload="metadata" />;
     if (asset.previewType === 'pdf') return <iframe src={asset.url} title={asset.fileName} />;
     if (canInlineText) {
-      if (textStatus === 'loading') return <p>Loading source file...</p>;
+      if (textStatus === 'loading') return <p>Loading source file…</p>;
       if (textStatus === 'error') return <p>The source preview could not load. Download the file to view it.</p>;
       if (asset.previewType === 'markdown') return <div className="markdown-body"><MarkdownContent content={textContent} /></div>;
       return <pre>{textContent}</pre>;
@@ -1682,11 +1739,11 @@ function SourceAssetPreview({ asset, isFull, label = 'Source file' }) {
         </div>
         <div className="source-asset-actions">
           <a href={asset.url} target="_blank" rel="noreferrer" title="Open source file in a new window">
-            <ArrowUpRight size={16} />
+            <ArrowUpRight aria-hidden="true" size={16} />
             Open
           </a>
           <a href={asset.downloadUrl} download title="Download source file">
-            <FileText size={16} />
+            <FileText aria-hidden="true" size={16} />
             Download
           </a>
         </div>
@@ -1702,6 +1759,8 @@ function ChatModal({ node, messages, summary, isSending, isGeneratingInsight, er
   const [isMaximized, setIsMaximized] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
   const busy = isSending || isGeneratingInsight;
+  const dialogRef = useRef(null);
+  useModalFocus(dialogRef, onClose);
   const hasHistory = summary?.conversations?.length;
   const messagesRef = useRef(null);
   const isNearBottomRef = useRef(true);
@@ -1727,7 +1786,7 @@ function ChatModal({ node, messages, summary, isSending, isGeneratingInsight, er
 
   return (
     <div className="chat-modal-backdrop" style={{ '--node-color': getCategoryMeta(node.category).color }}>
-      <div className={`chat-popover ${isMaximized ? 'is-maximized' : ''}`} role="dialog" aria-modal="true" aria-label="Node AI chat">
+      <div ref={dialogRef} tabIndex={-1} className={`chat-popover ${isMaximized ? 'is-maximized' : ''}`} role="dialog" aria-modal="true" aria-label="Node AI chat">
         <div className="chat-popover-head">
           <div>
             <strong>AI chat</strong>
@@ -1735,18 +1794,18 @@ function ChatModal({ node, messages, summary, isSending, isGeneratingInsight, er
           </div>
           <div className="chat-window-actions">
             <button className="icon-button" onClick={() => setIsMaximized((value) => !value)} aria-label={isMaximized ? 'Restore chat window' : 'Maximize chat window'}>
-              {isMaximized ? <Minimize2 size={17} /> : <Maximize2 size={17} />}
+              {isMaximized ? <Minimize2 aria-hidden="true" size={17} /> : <Maximize2 aria-hidden="true" size={17} />}
             </button>
             <button className="icon-button" onClick={onClose} aria-label="Close node AI chat">
-              <X size={17} />
+              <X aria-hidden="true" size={17} />
             </button>
           </div>
         </div>
 
         {hasHistory && (
           <div className="chat-history-bar">
-            <button className="history-toggle" onClick={() => setShowHistory((v) => !v)}>
-              <MessageCircle size={14} />
+            <button className="history-toggle" aria-expanded={showHistory} onClick={() => setShowHistory((v) => !v)}>
+              <MessageCircle aria-hidden="true" size={14} />
               {summary.totalMessages > 0 && <span className="history-count">{summary.totalMessages} past messages, {summary.conversations.length} conversations</span>}
               {!summary.totalMessages && <span>Previous conversations available</span>}
             </button>
@@ -1772,24 +1831,25 @@ function ChatModal({ node, messages, summary, isSending, isGeneratingInsight, er
           </div>
         )}
 
+        <p className="visually-hidden" role="status">{busy ? 'Hermes is processing your request…' : ''}</p>
         <div className="messages" ref={messagesRef} onScroll={handleMessagesScroll}>
           {(isMaximized ? messages : messages.slice(-4)).map((message, index) => (
             <div key={`${message.role}-${index}`} className={`message ${message.role}`}>
-              <MarkdownContent content={message.text || (message.role === 'agent' ? 'Thinking...' : '')} />
+              <MarkdownContent content={message.text || (message.role === 'agent' ? 'Thinking…' : '')} />
             </div>
           ))}
         </div>
-        {error && <div className="chat-error">{error}</div>}
+        {error && <div className="chat-error" role="alert">{error}</div>}
         <div className="chat-toolbar">
           <button type="button" title="Save this conversation as a Markdown insight file in llm-wiki. AI will analyze the conversation and generate a structured document." onClick={() => onGenerateInsight(node)} disabled={busy}>
-            {isGeneratingInsight ? <Command size={15} /> : <BookUp2 size={15} />}
+            {isGeneratingInsight ? <Command aria-hidden="true" size={15} /> : <BookUp2 aria-hidden="true" size={15} />}
             Save to Wiki
           </button>
         </div>
         <form onSubmit={(event) => onSend(event, node)} className="chat-form">
-          <input name="message" placeholder={`Ask ${node.name}...`} autoComplete="off" disabled={busy} />
+          <input aria-label="Message to Hermes" required name="message" placeholder={`Ask ${node.name}…`} autoComplete="off" disabled={busy} />
           <button type="submit" aria-label="Send" disabled={busy}>
-            {isSending ? <Command size={17} /> : <Send size={17} />}
+            {isSending ? <Command aria-hidden="true" size={17} /> : <Send aria-hidden="true" size={17} />}
           </button>
         </form>
       </div>
@@ -1826,7 +1886,7 @@ function MarkdownContent({ content }) {
         <div className="markdown-table-wrap" key={index}>
           <table>
             <thead>
-              <tr>{block.headers.map((cell, cellIndex) => <th key={cellIndex}>{renderInlineMarkdown(cell)}</th>)}</tr>
+              <tr>{block.headers.map((cell, cellIndex) => <th scope="col" key={cellIndex}>{renderInlineMarkdown(cell)}</th>)}</tr>
             </thead>
             <tbody>
               {block.rows.map((row, rowIndex) => (

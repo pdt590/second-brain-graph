@@ -7,7 +7,9 @@ import { createApiRoutes } from './api-routes.mjs';
 import { createAuth, sendJson } from './auth.mjs';
 import { createEmbeddedHermesManager } from './embedded-hermes-manager.mjs';
 import { ensureProductRuntimeEnv, getHermesConfig, isProductMode, loadRuntimeEnv } from './runtime-config.mjs';
-import { createWikiGraphIndexer, resolveWikiDir } from './wiki-graph-indexer.mjs';
+import { resolveWikiDir } from './wiki-graph-indexer.mjs';
+
+import { createWikiLibrary } from './wiki-library.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const rootDir = path.resolve(__dirname, '..');
@@ -18,14 +20,14 @@ const port = Number(env.SECOND_BRAIN_PORT || 3030);
 const host = env.SECOND_BRAIN_HOST || '127.0.0.1';
 const stateRootDir = isProductMode(env) ? env.SECOND_BRAIN_PRODUCT_HOME : rootDir;
 const wikiDir = resolveWikiDir(env);
-const indexer = createWikiGraphIndexer({ wikiDir });
+const indexer = createWikiLibrary({ wikiDir, stateRootDir });
 const auth = await createAuth({ rootDir: stateRootDir, env });
 const apiRoutes = createApiRoutes({ indexer, stateRootDir });
 const hermesManager = createEmbeddedHermesManager({ rootDir, env });
 
 await hermesManager.start();
 await indexer.start();
-console.log(`[second-brain] wiki dir: ${wikiDir}`);
+console.log(`[second-brain] wiki dir: ${indexer.wikiDir}`);
 if (isProductMode(env)) {
   console.log(`[second-brain] product home: ${env.SECOND_BRAIN_PRODUCT_HOME}`);
   console.log(`[second-brain] embedded Hermes target: ${env.HERMES_API_TARGET}`);
@@ -39,7 +41,7 @@ const server = http.createServer(async (request, response) => {
       return sendJson(response, {
         ok: true,
         productMode: isProductMode(env),
-        wikiDir,
+        wikiDir: indexer.wikiDir,
         hermesTarget: env.HERMES_API_TARGET || ''
       });
     }

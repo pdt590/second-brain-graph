@@ -59,6 +59,12 @@ flowchart TB
 
 The entire frontend is a single-file React app (~2100 lines) with no external router or state management library. The backend is a lightweight Node.js HTTP server using only built-in modules (no Express). The production server serves static files, proxies to Hermes, and watches the wiki directory for changes.
 
+## Choosing a Wiki Folder
+
+After signing in, open **User menu → Choose Wiki Folder**. Browse the server computer's drives and folders, or enter a path directly, then click **Use this folder**. The graph reloads immediately and watches the selected folder for changes.
+
+The selected path is saved in `data/wiki-settings.json` under the application state directory and reused after a restart. This setting is shared by users of this server. `HERMES_WIKI_DIR` remains the initial fallback when no saved folder is available. In Docker, select a container path such as `/wiki`; host folders must be mounted into the container first. Selecting a folder does not copy or modify its wiki files, or reconfigure the Hermes Agent's own storage.
+
 ## Quick Start
 
 ### Option 1: Development Environment

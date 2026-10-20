@@ -48,9 +48,9 @@
     "semantic_hash": "be5705e17ffaad93fae8d4ae9a6efd24"
   },
   "server/api-routes.mjs": {
-    "mtime": 1792384824.1241906,
-    "seen": 1792384872.1808612,
-    "ast_hash": "ea6e86961ad38da3eedfa9ad6c3b4010",
+    "mtime": 1792462533.176365,
+    "seen": 1792462837.6324298,
+    "ast_hash": "9f5eff39ba797cd5634d11e1478dae44",
     "semantic_hash": ""
   },
   "server/auth.mjs": {
@@ -78,10 +78,10 @@
     "semantic_hash": "56c2f6ab139a2fae5d74b09f11d17410"
   },
   "server/second-brain-server.mjs": {
-    "mtime": 1792255259.8824825,
-    "seen": 1792384205.8470368,
-    "ast_hash": "d4c5b85abeb8f08ff57ba981acec38de",
-    "semantic_hash": "d4c5b85abeb8f08ff57ba981acec38de"
+    "mtime": 1792462536.7766616,
+    "seen": 1792462837.632459,
+    "ast_hash": "fe8442a5c0c712fc3c009da90da0ee12",
+    "semantic_hash": ""
   },
   "server/wiki-graph-indexer.mjs": {
     "mtime": 1792384798.3531685,
@@ -96,16 +96,16 @@
     "semantic_hash": ""
   },
   "src/main.jsx": {
-    "mtime": 1792458014.9687915,
-    "seen": 1792458029.7075207,
-    "ast_hash": "a7079269d22cdf7109172e1cee5b2680",
+    "mtime": 1792464410.9213252,
+    "seen": 1792464548.742237,
+    "ast_hash": "9cdf8ef25156237faf3c4436eeeb857d",
     "semantic_hash": ""
   },
   "vite.config.js": {
-    "mtime": 1792255259.8884785,
-    "seen": 1792384205.8470452,
-    "ast_hash": "aadade4560af3c26f8806ec47ea8c229",
-    "semantic_hash": "aadade4560af3c26f8806ec47ea8c229"
+    "mtime": 1792462536.774053,
+    "seen": 1792462837.6324937,
+    "ast_hash": "88449900586785c4f95c16e600cf2419",
+    "semantic_hash": ""
   },
   "AGENTS.md": {
     "mtime": 1792383809.0077243,
@@ -126,9 +126,9 @@
     "semantic_hash": "03303269f8decb6600e0782614bf33bf"
   },
   "README.md": {
-    "mtime": 1792384798.3386376,
-    "seen": 1792384872.1808887,
-    "ast_hash": "a9d80dd113df2512df47859e0d54c15f",
+    "mtime": 1792462771.4963157,
+    "seen": 1792462837.6325269,
+    "ast_hash": "ada72e076f8477f21246d2ae4964d5f5",
     "semantic_hash": ""
   },
   "WINDOWS_INSTALL.md": {
@@ -144,9 +144,9 @@
     "semantic_hash": ""
   },
   "index.html": {
-    "mtime": 1792384798.3426406,
-    "seen": 1792384872.1808937,
-    "ast_hash": "c5fd06fcd53c8ea666a703bd6a580cd6",
+    "mtime": 1792463882.2134626,
+    "seen": 1792464153.591257,
+    "ast_hash": "a789755ce399a6442395b66f51f1147f",
     "semantic_hash": ""
   },
   "packaging/windows/README-WINDOWS-PRODUCT.md": {
@@ -161,10 +161,34 @@
     "ast_hash": "e250e06a8329c9953e4b488b00b64ab8",
     "semantic_hash": "e250e06a8329c9953e4b488b00b64ab8"
   },
-  ".vscode/settings.json": {
-    "mtime": 1792457685.8463738,
-    "seen": 1792457796.2693417,
-    "ast_hash": "96b2afc6e7e01881b6bb2a287a4517ae",
+  "server/wiki-library.mjs": {
+    "mtime": 1792462531.123659,
+    "seen": 1792462837.6324747,
+    "ast_hash": "7826f3ee26ec4a0d1daaeeb22950f181",
+    "semantic_hash": ""
+  },
+  "server/wiki-library.test.mjs": {
+    "mtime": 1792462507.6883678,
+    "seen": 1792462837.6324794,
+    "ast_hash": "79dff25969e24397e6978ba5f4675041",
+    "semantic_hash": ""
+  },
+  "src/WikiFolderDialog.jsx": {
+    "mtime": 1792463882.2114618,
+    "seen": 1792464153.591178,
+    "ast_hash": "50360b8af6808620dc1279e9a4b582a2",
+    "semantic_hash": ""
+  },
+  "src/useModalFocus.js": {
+    "mtime": 1792463942.4321878,
+    "seen": 1792464153.5911922,
+    "ast_hash": "78e3f966ac485abb8c605e8e0433fcde",
+    "semantic_hash": ""
+  },
+  ".codex/skills/web-design-guidelines/SKILL.md": {
+    "mtime": 1792463749.3669298,
+    "seen": 1792464153.5912054,
+    "ast_hash": "98087aedd18375666dbb093c859b2949",
     "semantic_hash": ""
   }
 }

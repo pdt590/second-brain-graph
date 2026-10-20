@@ -3,7 +3,9 @@ import react from '@vitejs/plugin-react';
 import { createApiRoutes } from './server/api-routes.mjs';
 import { createAuth } from './server/auth.mjs';
 import { detectHermesTarget, ensureProductRuntimeEnv, loadRuntimeEnv } from './server/runtime-config.mjs';
-import { createWikiGraphIndexer, resolveWikiDir } from './server/wiki-graph-indexer.mjs';
+import { resolveWikiDir } from './server/wiki-graph-indexer.mjs';
+
+import { createWikiLibrary } from './server/wiki-library.mjs';
 
 const hermesEnv = ensureProductRuntimeEnv({ env: loadRuntimeEnv() });
 const hermesResolvedApiKey = hermesEnv.API_SERVER_KEY || '';
@@ -11,7 +13,7 @@ const hermesResolvedApiKey = hermesEnv.API_SERVER_KEY || '';
 export default defineConfig(async ({ command }) => {
   const hermesTarget = await detectHermesTarget(hermesEnv);
   const wikiIndexer = command === 'serve'
-    ? createWikiGraphIndexer({ wikiDir: resolveWikiDir(hermesEnv) })
+    ? createWikiLibrary({ wikiDir: resolveWikiDir(hermesEnv), stateRootDir: process.cwd() })
     : null;
   const auth = command === 'serve' ? await createAuth({ rootDir: process.cwd(), env: hermesEnv }) : null;
   const apiRoutes = command === 'serve' ? createApiRoutes({ indexer: wikiIndexer, stateRootDir: process.cwd() }) : null;

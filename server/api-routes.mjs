@@ -73,6 +73,24 @@ export function createApiRoutes({ indexer, stateRootDir }) {
 
   return {
     async handle(request, response, url) {
+      if (url.pathname === '/api/wiki/directory' || url.pathname === '/api/wiki/browse') {
+        try {
+          if (url.pathname === '/api/wiki/browse' && request.method === 'GET') {
+            sendJson(response, await indexer.browse(url.searchParams.get('path')));
+          } else if (url.pathname === '/api/wiki/directory' && request.method === 'GET') {
+            sendJson(response, { wikiDir: indexer.wikiDir });
+          } else if (url.pathname === '/api/wiki/directory' && request.method === 'PUT') {
+            const body = await readJsonBody(request);
+            sendJson(response, await indexer.selectDirectory(body.path));
+          } else sendJson(response, { error: 'Method not allowed' }, 405);
+        } catch (error) {
+          const message = error.code === 'ENOENT' ? 'Folder not found.'
+            : ['EACCES', 'EPERM'].includes(error.code) ? 'This folder cannot be read.'
+              : error.message || 'The folder could not be opened.';
+          sendJson(response, { error: message }, error.status || 400);
+        }
+        return true;
+      }
       if (url.pathname === '/api/graph') {
         sendJson(response, await indexer.getGraph());
         return true;
