@@ -1,0 +1,4 @@
+interface:
+  display_name: "Hermes Web Style Creator"
+  short_description: "Build bilingual Hermes websites with polished UI"
+  default_prompt: "Dùng $hermes-web-style-creator để tạo website Hermes theo brief của tôi."

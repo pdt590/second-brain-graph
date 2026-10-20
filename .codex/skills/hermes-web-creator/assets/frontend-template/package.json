@@ -1,0 +1,15 @@
+{
+  "name": "hubplus-landing",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "node server.cjs",
+    "start": "node server.cjs",
+    "check": "node --check vendor.js && node --check app.js && node --check page.js && node --check article.js && node --check policy/privacy/privacy.js && node --check server.cjs && node --check seo.js",
+    "seo": "node scripts/build-seo.mjs"
+  },
+  "dependencies": {
+    "dompurify": "^3.4.17",
+    "marked": "^18.1.1"
+  }
+}

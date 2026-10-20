@@ -3,7 +3,16 @@
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/second-brain-icon.svg" />
-    <meta name="theme-color" content="#020408" />
+    <meta name="theme-color" content="#050705" />
+    <script>
+      (() => {
+        let theme = 'dark';
+        try { if (localStorage.getItem('hermes-graph-theme') === 'light') theme = 'light'; } catch {}
+        document.documentElement.dataset.theme = theme;
+        document.documentElement.style.colorScheme = theme;
+        document.querySelector('meta[name="theme-color"]')?.setAttribute('content', theme === 'dark' ? '#050705' : '#ffffff');
+      })();
+    </script>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />

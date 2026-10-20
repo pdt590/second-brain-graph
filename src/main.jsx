@@ -23,13 +23,16 @@ import {
   SlidersHorizontal,
   Sun,
   User,
+  ZoomIn,
+  ZoomOut,
   X
 } from 'lucide-react';
 import './styles.css';
 import WikiFolderDialog from './WikiFolderDialog.jsx';
 import useModalFocus from './useModalFocus.js';
 
-const categoryPalette = ['#16f2b3', '#45a8ff', '#ffcc4d', '#ff7a45', '#ff5d9e', '#7c6dff', '#34d399', '#f472b6', '#22d3ee', '#a3e635'];
+const categoryPalette = ['#f4b900', '#d7a84b', '#c5be83', '#b9c284', '#e5c778', '#ce8b43', '#a8ad79', '#dcad6c', '#c6b5a0', '#d9ceaa'];
+const categoryPaletteLight = ['#886300', '#946b26', '#6a6837', '#56622c', '#8c7025', '#9a5928', '#5c6440', '#92602d', '#71604d', '#776b3b'];
 const HERMES_CHAT_COMPLETIONS_URL = '/api/hermes/v1/chat/completions';
 const HERMES_MODEL = 'hermes-agent';
 const GRAPH_MODES = { TWO_D: '2d', THREE_D: '3d' };
@@ -49,13 +52,13 @@ const categoryIcons = {
   references: Folder
 };
 
-function getCategoryMeta(category = 'root') {
+function getCategoryMeta(category = 'root', theme = 'dark') {
   const key = String(category || 'root');
   const hash = [...key].reduce((sum, char) => sum + char.charCodeAt(0), 0);
   return {
     key,
     label: titleFromCategory(key),
-    color: categoryPalette[hash % categoryPalette.length],
+    color: (theme === 'light' ? categoryPaletteLight : categoryPalette)[hash % categoryPalette.length],
     icon: categoryIcons[key] ?? Folder
   };
 }
@@ -193,23 +196,12 @@ function getNodeSpriteMaterial(color, state, threeModule) {
   canvas.width = 96;
   canvas.height = 96;
   const ctx = canvas.getContext('2d');
-  const intensity = state === 'selected' ? 1 : state === 'neighbor' ? 0.82 : 0.62;
-  const outerAlpha = state === 'selected' ? 0.34 : state === 'neighbor' ? 0.22 : 0.14;
+  const intensity = 1;
   const radius = state === 'selected' ? 39 : state === 'neighbor' ? 35 : 31;
   const cx = 48;
   const cy = 48;
 
   ctx.clearRect(0, 0, canvas.width, canvas.height);
-  const glow = ctx.createRadialGradient(cx, cy, 2, cx, cy, 46);
-  glow.addColorStop(0, `rgba(255,255,255,${0.34 * intensity})`);
-  glow.addColorStop(0.28, `${color}f2`);
-  glow.addColorStop(0.7, `${color}${Math.round(outerAlpha * 255).toString(16).padStart(2, '0')}`);
-  glow.addColorStop(1, 'rgba(0,0,0,0)');
-  ctx.fillStyle = glow;
-  ctx.beginPath();
-  ctx.arc(cx, cy, 46, 0, Math.PI * 2);
-  ctx.fill();
-
   ctx.fillStyle = color;
   ctx.globalAlpha = intensity;
   ctx.beginPath();
@@ -232,8 +224,8 @@ function getNodeSpriteMaterial(color, state, threeModule) {
   return material;
 }
 
-function createNodeSprite(node, selectedNodeId, neighborsById, threeModule) {
-  const cat = getCategoryMeta(node.category);
+function createNodeSprite(node, selectedNodeId, neighborsById, threeModule, theme) {
+  const cat = getCategoryMeta(node.category, theme);
   const state = node.id === selectedNodeId
     ? 'selected'
     : neighborsById.get(selectedNodeId)?.has(node.id)
@@ -361,7 +353,8 @@ function App() {
   });
   useEffect(() => {
     document.documentElement.style.colorScheme = theme;
-    document.querySelector('meta[name="theme-color"]')?.setAttribute('content', theme === 'dark' ? '#020408' : '#f4f8f8');
+    document.documentElement.dataset.theme = theme;
+    document.querySelector('meta[name="theme-color"]')?.setAttribute('content', theme === 'dark' ? '#050705' : '#ffffff');
   }, [theme]);
   const [authUser, setAuthUser] = useState(null);
   const [authStatus, setAuthStatus] = useState('checking');
@@ -591,9 +584,35 @@ function App() {
     setGraphMode((current) => current === GRAPH_MODES.THREE_D ? GRAPH_MODES.TWO_D : GRAPH_MODES.THREE_D);
   }, []);
 
+  const zoomGraph = useCallback((direction) => {
+    const instance = fgRef.current;
+    if (!instance) return;
+    const duration = window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 220;
+    const factor = direction > 0 ? 1.2 : 1 / 1.2;
+    if (graphMode === GRAPH_MODES.TWO_D) {
+      instance.zoom?.((instance.zoom?.() || 1) * factor, duration);
+      return;
+    }
+    const controls = instance.controls?.();
+    const target = controls?.target || { x: 0, y: 0, z: 0 };
+    const current = instance.cameraPosition?.();
+    if (!current) return;
+    const offset = { x: current.x - target.x, y: current.y - target.y, z: current.z - target.z };
+    const distance = Math.hypot(offset.x, offset.y, offset.z);
+    if (!distance) return;
+    const nextDistance = Math.min(controls?.maxDistance || Infinity, Math.max(controls?.minDistance || 1, distance / factor));
+    const scale = nextDistance / distance;
+    instance.cameraPosition?.({ x: target.x + offset.x * scale, y: target.y + offset.y * scale, z: target.z + offset.z * scale }, { x: target.x, y: target.y, z: target.z }, duration);
+  }, [graphMode]);
+
   const handleGraphKeyDown = useCallback((event) => {
     const graphInstance = fgRef.current;
     if (!graphInstance) return;
+    if (['+', '=', '-', '_'].includes(event.key)) {
+      event.preventDefault();
+      zoomGraph(event.key === '+' || event.key === '=' ? 1 : -1);
+      return;
+    }
 
     if (graphMode === GRAPH_MODES.THREE_D) {
       const key = event.key;
@@ -607,11 +626,7 @@ function App() {
       const current = graphInstance.cameraPosition?.() || { x: 0, y: 0, z: 460 };
       let next = { ...current };
       const angle = Math.PI / 18;
-      if (key === '+' || key === '=') {
-        next = { x: current.x * 0.84, y: current.y * 0.84, z: current.z * 0.84 };
-      } else if (key === '-' || key === '_') {
-        next = { x: current.x * 1.18, y: current.y * 1.18, z: current.z * 1.18 };
-      } else if (key === 'ArrowLeft' || key === 'ArrowRight') {
+      if (key === 'ArrowLeft' || key === 'ArrowRight') {
         const dir = key === 'ArrowLeft' ? -1 : 1;
         next = {
           x: current.x * Math.cos(angle * dir) - current.z * Math.sin(angle * dir),
@@ -625,17 +640,11 @@ function App() {
       return;
     }
 
-    if (event.key === '+' || event.key === '=') {
-      event.preventDefault();
-      graphInstance.zoom?.((graphInstance.zoom?.() || 1) * 1.18, 220);
-    } else if (event.key === '-' || event.key === '_') {
-      event.preventDefault();
-      graphInstance.zoom?.((graphInstance.zoom?.() || 1) * 0.84, 220);
-    } else if (event.key === '0') {
+    if (event.key === '0') {
       event.preventDefault();
       fitGraphView(graphInstance, filteredGraph, graphMode, 450);
     }
-  }, [filteredGraph, graphMode]);
+  }, [filteredGraph, graphMode, zoomGraph]);
 
   const toggleTheme = () => {
     setTheme((current) => {
@@ -814,6 +823,20 @@ function App() {
             .showPointerCursor((node) => Boolean(node));
         }
 
+        // Shorter links and gentler repulsion keep the default layout compact.
+        graphInstance.d3Force('charge')?.strength(-12);
+        graphInstance.d3Force('link')?.distance(18);
+        let layoutNodes = [];
+        const compactForce = (alpha) => {
+          for (const node of layoutNodes) {
+            if (Number.isFinite(node.x)) node.vx -= node.x * 0.03 * alpha;
+            if (Number.isFinite(node.y)) node.vy -= node.y * 0.03 * alpha;
+            if (graphMode === GRAPH_MODES.THREE_D && Number.isFinite(node.z)) node.vz -= node.z * 0.03 * alpha;
+          }
+        };
+        compactForce.initialize = (nodes) => { layoutNodes = nodes; };
+        graphInstance.d3Force('compact', compactForce);
+
         fgRef.current = graphInstance;
         setGraphReady(true);
         graphHostRef.current?.focus({ preventScroll: true });
@@ -852,12 +875,12 @@ function App() {
       if (!threeModule) return;
       graphInstance
         .graphData(filteredGraph)
-        .nodeThreeObject((node) => createNodeSprite(node, selectedNodeId, neighborsById, threeModule))
+        .nodeThreeObject((node) => createNodeSprite(node, selectedNodeId, neighborsById, threeModule, theme))
         .nodeThreeObjectExtend(false)
         .nodeOpacity(0.92)
         .linkColor((link) => linkTouchesNode(link, selectedNodeId)
-          ? (theme === 'dark' ? 'rgba(174, 242, 255, .78)' : 'rgba(24, 94, 118, .62)')
-          : (theme === 'dark' ? 'rgba(120, 220, 255, .18)' : 'rgba(41, 87, 113, .18)'))
+          ? (theme === 'dark' ? 'rgba(244, 185, 0, .75)' : 'rgba(136, 99, 0, .7)')
+          : (theme === 'dark' ? 'rgba(167, 165, 143, .24)' : 'rgba(98, 98, 98, .24)'))
         .linkWidth((link) => linkTouchesNode(link, selectedNodeId) ? 1.8 : 0.55)
         .linkOpacity(0.72)
         .linkDirectionalParticles((link) => linkTouchesNode(link, selectedNodeId) ? 1 : 0)
@@ -867,18 +890,18 @@ function App() {
     } else {
       graphInstance
         .graphData(filteredGraph)
-        .linkColor(() => theme === 'dark' ? 'rgba(120, 220, 255, 0.24)' : 'rgba(41, 87, 113, 0.24)')
+        .linkColor(() => theme === 'dark' ? 'rgba(167, 165, 143, .3)' : 'rgba(98, 98, 98, .3)')
         .linkWidth((link) => linkTouchesNode(link, selectedNodeId) ? 2.4 : 0.8)
-        .nodeCanvasObject((node, ctx, globalScale) => {
+        .nodeCanvasObject((node, ctx) => {
           if (!Number.isFinite(node.x) || !Number.isFinite(node.y)) return;
-          const cat = getCategoryMeta(node.category);
+          const cat = getCategoryMeta(node.category, theme);
           const isSelected = node.id === selectedNodeId;
           const isNeighbor = neighborsById.get(selectedNodeId)?.has(node.id);
           const radius = isSelected ? 11 : isNeighbor ? 8 : 6;
           ctx.save();
 
           ctx.shadowColor = cat.color;
-          ctx.shadowBlur = isSelected ? 14 : isNeighbor ? 9 : 4;
+          ctx.shadowBlur = 0;
           ctx.beginPath();
           ctx.arc(node.x, node.y, radius, 0, Math.PI * 2);
           ctx.fillStyle = cat.color;
@@ -887,18 +910,10 @@ function App() {
           ctx.shadowBlur = 0;
           if (isSelected || isNeighbor) {
             ctx.lineWidth = isSelected ? 2.6 : 1.8;
-            ctx.strokeStyle = theme === 'dark' ? 'rgba(244,249,255,.86)' : 'rgba(20,39,50,.72)';
+            ctx.strokeStyle = theme === 'dark' ? 'rgba(238,230,206,.9)' : 'rgba(32,32,32,.8)';
             ctx.stroke();
           }
 
-          const label = node.name;
-          const fontSize = Math.max(3, 13 / globalScale);
-          ctx.font = `600 ${fontSize}px "Be Vietnam Pro", sans-serif`;
-          ctx.textAlign = 'center';
-          ctx.fillStyle = theme === 'dark'
-            ? (isSelected || isNeighbor ? 'rgba(244,249,255,.96)' : 'rgba(187,204,218,.72)')
-            : (isSelected || isNeighbor ? 'rgba(20,39,50,.95)' : 'rgba(55,83,98,.68)');
-          ctx.fillText(label, node.x, node.y + radius + fontSize + 4 / globalScale);
           ctx.restore();
         })
         .onNodeClick(focusNode);
@@ -1122,6 +1137,8 @@ function App() {
       </label>
       <p id="graph-keyboard-help" className="visually-hidden">Use arrow keys to navigate the 3D graph, plus or minus to zoom, and zero to fit the graph. Use Select a graph node to open a file with the keyboard.</p>
 
+
+
       <header className="topbar">
         <button className="brand" onClick={() => focusNode(graph.nodes[0])} aria-label="Focus Hermes Agent" disabled={!graph.nodes.length}>
           <span className="brand-mark" aria-hidden="true">
@@ -1176,6 +1193,7 @@ function App() {
             {filteredGraph.nodes.length}
           </small>
         </div>
+        <div className="topbar-actions">
         <button
           className={`graph-mode-button ${graphMode === GRAPH_MODES.THREE_D ? 'is-3d' : 'is-2d'}`}
           onClick={toggleGraphMode}
@@ -1188,6 +1206,14 @@ function App() {
         <button className="theme-button" onClick={toggleTheme} aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}>
           {theme === 'dark' ? <Sun aria-hidden="true" size={18} /> : <Moon aria-hidden="true" size={18} />}
         </button>
+      <div className="graph-zoom-controls" role="group" aria-label="Graph zoom">
+        <button type="button" onClick={() => zoomGraph(1)} disabled={!graphReady || !filteredGraph.nodes.length} aria-label="Zoom in" title="Zoom in (+)">
+          <ZoomIn aria-hidden="true" size={20} />
+        </button>
+        <button type="button" onClick={() => zoomGraph(-1)} disabled={!graphReady || !filteredGraph.nodes.length} aria-label="Zoom out" title="Zoom out (-)">
+          <ZoomOut aria-hidden="true" size={20} />
+        </button>
+      </div>
         <button className="restore-button" onClick={restoreGraph} aria-label="Fit graph to view" title="Fit graph to view">
           <RotateCcw aria-hidden="true" size={18} />
         </button>
@@ -1219,6 +1245,7 @@ function App() {
             </div>
           )}
         </div>
+        </div>
       </header>
 
       {graphStatus === 'loading' && <div className="graph-status" role="status">Loading the Second Brain graph…</div>}
@@ -1245,7 +1272,7 @@ function App() {
         })}
         <button
           className={`legend-dot legend-more ${isCategoryPanelOpen ? 'is-active' : ''}`}
-          style={{ '--cat': '#16f2b3' }}
+          style={{ '--cat': '#f4b900' }}
           onClick={() => setIsCategoryPanelOpen((value) => !value)}
           aria-label="Open category filter"
         >

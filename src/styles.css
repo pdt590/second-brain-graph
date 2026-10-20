@@ -2,35 +2,33 @@
 
 :root {
   font-family: 'Be Vietnam Pro', sans-serif;
-  background: #020408;
-  color: #edf7ff;
-  --app-bg:
-    radial-gradient(circle at 18% 20%, rgba(22, 242, 179, 0.16), transparent 34%),
-    radial-gradient(circle at 78% 28%, rgba(69, 168, 255, 0.17), transparent 30%),
-    linear-gradient(135deg, #020408 0%, #07111c 48%, #02050a 100%);
-  --grid-line: rgba(255,255,255,.035);
-  --scanline: rgba(255,255,255,.025);
-  --panel-bg: linear-gradient(135deg, rgba(8, 18, 29, .82), rgba(4, 8, 14, .62));
-  --panel-border: rgba(155, 229, 255, .22);
-  --panel-shadow: 0 24px 90px rgba(0, 0, 0, .35), inset 0 0 32px rgba(69, 168, 255, .05);
-  --button-bg: rgba(6, 17, 27, .76);
-  --surface: rgba(255,255,255,.055);
-  --surface-strong: rgba(255,255,255,.08);
-  --field-bg: rgba(1, 6, 10, .72);
-  --text-main: #edf7ff;
-  --text-soft: rgba(223, 239, 248, .82);
-  --text-muted: rgba(208, 230, 242, .72);
-  --placeholder: rgba(185, 211, 226, .55);
-  --control-text: #eaf8ff;
-  --tooltip-bg: rgba(2, 8, 14, .92);
-  --fullscreen-bg:
-    radial-gradient(circle at 18% 0%, color-mix(in srgb, var(--node-color), transparent 82%), transparent 34%),
-    linear-gradient(135deg, rgba(6, 14, 23, .98), rgba(2, 5, 10, .96));
-  --fullscreen-card: rgba(255,255,255,.045);
-  --fullscreen-border: rgba(255,255,255,.1);
-  --message-agent: rgba(69, 168, 255, .09);
-  --message-user: rgba(22, 242, 179, .09);
-  --brand-mark-text: #061016;
+  background: #050705;
+  color: #eee6ce;
+  --accent: #f4b900;
+  --accent-text: #f4b900;
+  --accent-ink: #171a12;
+  --app-bg: #050705;
+  --grid-line: rgba(167, 165, 143, .055);
+  --scanline: transparent;
+  --panel-bg: #11130d;
+  --panel-border: #34372a;
+  --panel-shadow: none;
+  --button-bg: #171a12;
+  --surface: #171a12;
+  --surface-strong: #22261a;
+  --field-bg: #090b07;
+  --text-main: #eee6ce;
+  --text-soft: #d0cbb8;
+  --text-muted: #a7a58f;
+  --placeholder: #8d917d;
+  --control-text: #eee6ce;
+  --tooltip-bg: #171a12;
+  --fullscreen-bg: #090b07;
+  --fullscreen-card: #11130d;
+  --fullscreen-border: #34372a;
+  --message-agent: #171a12;
+  --message-user: #252310;
+  --brand-mark-text: #171a12;
 }
 
 * {
@@ -69,32 +67,30 @@ button {
 
 .app-shell[data-theme="light"] {
   color-scheme: light;
-  --app-bg:
-    radial-gradient(circle at 20% 14%, rgba(22, 242, 179, 0.16), transparent 28%),
-    radial-gradient(circle at 78% 30%, rgba(255, 204, 77, 0.14), transparent 28%),
-    linear-gradient(135deg, #f4f8f8 0%, #eaf3f1 48%, #f8fbf7 100%);
-  --grid-line: rgba(24, 65, 79, .095);
-  --scanline: rgba(9, 37, 48, .035);
-  --panel-bg: linear-gradient(135deg, rgba(255, 255, 255, .78), rgba(240, 248, 247, .68));
-  --panel-border: rgba(51, 101, 118, .18);
-  --panel-shadow: 0 24px 90px rgba(35, 72, 88, .16), inset 0 0 34px rgba(255, 255, 255, .34);
-  --button-bg: rgba(255, 255, 255, .72);
-  --surface: rgba(255,255,255,.62);
-  --surface-strong: rgba(255,255,255,.84);
-  --field-bg: rgba(255,255,255,.72);
-  --text-main: #142732;
-  --text-soft: rgba(26, 49, 60, .82);
-  --text-muted: rgba(53, 82, 94, .68);
-  --placeholder: rgba(70, 101, 112, .55);
-  --control-text: #18313d;
-  --tooltip-bg: rgba(255,255,255,.96);
-  --fullscreen-bg:
-    radial-gradient(circle at 18% 0%, color-mix(in srgb, var(--node-color), transparent 86%), transparent 36%),
-    linear-gradient(135deg, rgba(248, 252, 250, .98), rgba(232, 243, 241, .96));
-  --fullscreen-card: rgba(255,255,255,.68);
-  --fullscreen-border: rgba(38, 78, 92, .14);
-  --message-agent: rgba(69, 168, 255, .13);
-  --message-user: rgba(22, 155, 119, .12);
+  --accent: #f4b900;
+  --accent-text: #886300;
+  --accent-ink: #202020;
+  --app-bg: #ffffff;
+  --grid-line: #e8e8e8;
+  --scanline: transparent;
+  --panel-bg: #f5f5f5;
+  --panel-border: #d5d5d5;
+  --panel-shadow: none;
+  --button-bg: #ffffff;
+  --surface: #ebebeb;
+  --surface-strong: #e2e2e2;
+  --field-bg: #ffffff;
+  --text-main: #202020;
+  --text-soft: #404040;
+  --text-muted: #626262;
+  --placeholder: #707070;
+  --control-text: #202020;
+  --tooltip-bg: #ffffff;
+  --fullscreen-bg: #ffffff;
+  --fullscreen-card: #f5f5f5;
+  --fullscreen-border: #d5d5d5;
+  --message-agent: #ebebeb;
+  --message-user: #fff4cc;
 }
 
 .app-shell::before {
@@ -155,8 +151,8 @@ button {
   color: var(--control-text);
   background: var(--button-bg);
   border: 1px solid var(--panel-border);
-  border-radius: 8px;
-  box-shadow: var(--panel-shadow);
+  border-radius: 4px;
+  box-shadow: none;
 }
 
 .login-card,
@@ -165,9 +161,9 @@ button {
   color: var(--text-main);
   background: var(--panel-bg);
   border: 1px solid var(--panel-border);
-  border-radius: 8px;
-  box-shadow: var(--panel-shadow);
-  backdrop-filter: blur(18px);
+  border-radius: 4px;
+  box-shadow: none;
+  backdrop-filter: none;
 }
 
 .login-card {
@@ -213,7 +209,7 @@ button {
   color: var(--text-main);
   background: var(--field-bg);
   border: 1px solid var(--panel-border);
-  border-radius: 8px;
+  border-radius: 4px;
   outline: 0;
   padding: 0 12px;
 }
@@ -224,10 +220,10 @@ button {
   justify-content: center;
   gap: 8px;
   min-height: 44px;
-  color: #061016;
-  background: #16f2b3;
+  color: var(--accent-ink);
+  background: var(--accent);
   border: 0;
-  border-radius: 8px;
+  border-radius: 4px;
   font-weight: 800;
 }
 
@@ -250,7 +246,7 @@ button {
   place-items: center;
   padding: 24px;
   background: rgba(0, 0, 0, .38);
-  backdrop-filter: blur(10px);
+  backdrop-filter: none;
 }
 
 .password-dialog {
@@ -286,8 +282,8 @@ button {
 .legend-dock {
   border: 1px solid var(--panel-border);
   background: var(--panel-bg);
-  box-shadow: var(--panel-shadow);
-  backdrop-filter: blur(18px);
+  box-shadow: none;
+  backdrop-filter: none;
 }
 
 .brand {
@@ -303,7 +299,7 @@ button {
   padding: 8px 13px;
   color: var(--text-main);
   text-align: left;
-  border-radius: 8px;
+  border-radius: 4px;
 }
 
 .brand-mark {
@@ -311,9 +307,9 @@ button {
   width: 44px;
   height: 44px;
   place-items: center;
-  color: #16f2b3;
+  color: var(--accent-text);
   background: transparent;
-  border: 1px solid rgba(22, 242, 179, .38);
+  border: 1px solid var(--panel-border);
   border-radius: 50%;
   box-shadow: none;
 }
@@ -356,9 +352,9 @@ button {
   color: var(--text-soft);
   background: var(--panel-bg);
   border: 1px solid var(--panel-border);
-  border-radius: 8px;
-  box-shadow: var(--panel-shadow);
-  backdrop-filter: blur(18px);
+  border-radius: 4px;
+  box-shadow: none;
+  backdrop-filter: none;
   font-size: 13px;
 }
 
@@ -382,7 +378,7 @@ button {
   min-height: 54px;
   padding: 0 16px;
   color: var(--text-muted);
-  border-radius: 8px;
+  border-radius: 4px;
 }
 
 .search-box input {
@@ -432,7 +428,7 @@ button {
   gap: 8px;
   padding: 7px 10px;
   color: var(--text-muted);
-  border-radius: 8px;
+  border-radius: 4px;
 }
 
 .time-filter label {
@@ -486,7 +482,7 @@ button {
   padding: 2px 6px;
   background: var(--surface);
   border: 1px solid var(--panel-border);
-  border-radius: 999px;
+  border-radius: 4px;
 }
 
 .graph-mode-button,
@@ -501,7 +497,7 @@ button {
   place-items: center;
   color: var(--control-text);
   background: var(--button-bg);
-  border-radius: 8px;
+  border-radius: 4px;
   padding: 0;
   transition: transform .2s ease, box-shadow .2s ease, color .2s ease;
 }
@@ -521,7 +517,7 @@ button {
 }
 
 .graph-mode-button.is-3d {
-  color: #16f2b3;
+  color: var(--accent-text);
 }
 
 .theme-button {
@@ -545,11 +541,11 @@ button {
   width: 58px;
   height: 58px;
   place-items: center;
-  color: #061016;
-  background: #16f2b3;
+  color: var(--accent-ink);
+  background: var(--accent);
   border: 1px solid var(--panel-border);
   border-radius: 50%;
-  box-shadow: 0 0 22px rgba(22, 242, 179, .46), var(--panel-shadow);
+  box-shadow: none;
   font-weight: 800;
 }
 
@@ -565,9 +561,9 @@ button {
   color: var(--text-main);
   background: var(--panel-bg);
   border: 1px solid var(--panel-border);
-  border-radius: 8px;
-  box-shadow: var(--panel-shadow);
-  backdrop-filter: blur(18px);
+  border-radius: 4px;
+  box-shadow: none;
+  backdrop-filter: none;
 }
 
 .user-dropdown-head {
@@ -606,9 +602,9 @@ button {
 .graph-mode-button:hover,
 .theme-button:hover,
 .restore-button:hover {
-  color: #16f2b3;
+  color: var(--accent-text);
   transform: translateY(-1px);
-  box-shadow: var(--panel-shadow), 0 0 24px rgba(22, 242, 179, .22);
+  box-shadow: none;
 }
 
 .legend-dock {
@@ -620,7 +616,7 @@ button {
   gap: 10px;
   max-width: min(620px, calc(100vw - 48px));
   padding: 10px;
-  border-radius: 999px;
+  border-radius: 4px;
 }
 
 .legend-dot {
@@ -648,8 +644,8 @@ button {
   color: var(--text-main);
   background: var(--tooltip-bg);
   border: 1px solid color-mix(in srgb, var(--cat), transparent 42%);
-  border-radius: 999px;
-  box-shadow: 0 0 22px color-mix(in srgb, var(--cat), transparent 58%);
+  border-radius: 4px;
+  box-shadow: none;
   font-size: 12px;
   font-weight: 700;
   opacity: 0;
@@ -676,7 +672,7 @@ button {
 .legend-dot:hover {
   opacity: 1;
   transform: translateY(-2px);
-  box-shadow: 0 0 24px color-mix(in srgb, var(--cat), transparent 38%);
+  box-shadow: none;
 }
 
 .legend-more {
@@ -692,9 +688,9 @@ button {
   height: 18px;
   place-items: center;
   padding: 0 5px;
-  color: #041015;
-  background: #16f2b3;
-  border-radius: 999px;
+  color: var(--accent-ink);
+  background: var(--accent);
+  border-radius: 4px;
   font-size: 10px;
   font-weight: 800;
 }
@@ -718,9 +714,9 @@ button {
   color: var(--text-main);
   background: var(--panel-bg);
   border: 1px solid var(--panel-border);
-  border-radius: 8px;
-  box-shadow: var(--panel-shadow);
-  backdrop-filter: blur(18px);
+  border-radius: 4px;
+  box-shadow: none;
+  backdrop-filter: none;
 }
 
 .category-popover-head,
@@ -749,7 +745,7 @@ button {
   color: var(--text-muted);
   background: var(--surface);
   border: 1px solid var(--panel-border);
-  border-radius: 8px;
+  border-radius: 4px;
 }
 
 .category-search input {
@@ -767,7 +763,7 @@ button {
   color: var(--text-main);
   background: var(--surface);
   border: 1px solid var(--panel-border);
-  border-radius: 999px;
+  border-radius: 4px;
   font-size: 12px;
 }
 
@@ -787,7 +783,7 @@ button {
   color: var(--text-soft);
   background: transparent;
   border: 1px solid transparent;
-  border-radius: 8px;
+  border-radius: 4px;
   padding: 0 8px 0 5px;
   text-align: left;
 }
@@ -833,7 +829,7 @@ button {
   gap: 16px;
   overflow: auto;
   padding: 18px;
-  border-radius: 8px;
+  border-radius: 4px;
 }
 
 .node-panel.is-full {
@@ -877,8 +873,8 @@ button {
   min-width: 0;
   border: 1px solid var(--fullscreen-border);
   background: var(--fullscreen-card);
-  border-radius: 8px;
-  box-shadow: inset 0 0 30px rgba(255,255,255,.04);
+  border-radius: 4px;
+  box-shadow: none;
 }
 
 .node-panel.is-full .node-meta {
@@ -986,7 +982,7 @@ button {
   right: 0;
   height: 2px;
   background: linear-gradient(90deg, transparent, var(--node-color), transparent);
-  box-shadow: 0 0 18px var(--node-color);
+  box-shadow: none;
 }
 
 .panel-head {
@@ -1023,7 +1019,7 @@ button {
   color: var(--text-muted);
   background: var(--surface);
   border: 1px solid var(--panel-border);
-  border-radius: 999px;
+  border-radius: 4px;
   font-size: 12px;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1050,7 +1046,7 @@ button {
   height: 8px;
   background: var(--node-color);
   border-radius: 50%;
-  box-shadow: 0 0 14px var(--node-color);
+  box-shadow: none;
 }
 
 .node-panel h1 {
@@ -1153,7 +1149,7 @@ button {
   padding: 14px;
   background: var(--field-bg);
   border: 1px solid var(--panel-border);
-  border-radius: 8px;
+  border-radius: 4px;
 }
 
 .markdown-body code {
@@ -1182,7 +1178,7 @@ button {
   overflow-x: auto;
   margin: 1em 0;
   border: 1px solid var(--panel-border);
-  border-radius: 8px;
+  border-radius: 4px;
 }
 
 .markdown-body table {
@@ -1217,7 +1213,7 @@ button {
   color: var(--text-main);
   background: var(--surface);
   border: 1px solid var(--panel-border);
-  border-radius: 8px;
+  border-radius: 4px;
 }
 
 .media-card img,
@@ -1251,7 +1247,7 @@ button {
   width: 38px;
   height: 38px;
   place-items: center;
-  color: #051016;
+  color: var(--accent-ink);
   background: var(--node-color);
   border: 0;
   border-radius: 50%;
@@ -1307,7 +1303,7 @@ button {
   color: var(--text-soft);
   background: var(--surface);
   border: 1px solid var(--panel-border);
-  border-radius: 8px;
+  border-radius: 4px;
 }
 
 .source-asset.is-full {
@@ -1366,7 +1362,7 @@ button {
   text-decoration: none;
   background: var(--surface-strong);
   border: 1px solid var(--panel-border);
-  border-radius: 999px;
+  border-radius: 4px;
   font-size: 12px;
   font-weight: 700;
 }
@@ -1374,7 +1370,7 @@ button {
 .source-asset-preview {
   min-height: 86px;
   overflow: auto;
-  border-radius: 8px;
+  border-radius: 4px;
 }
 
 .source-asset:not(.is-full) .source-asset-preview {
@@ -1388,7 +1384,7 @@ button {
   display: block;
   width: 100%;
   border: 0;
-  border-radius: 8px;
+  border-radius: 4px;
   background: var(--field-bg);
 }
 
@@ -1415,7 +1411,7 @@ button {
   color: var(--text-soft);
   background: var(--field-bg);
   border: 1px solid var(--panel-border);
-  border-radius: 8px;
+  border-radius: 4px;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
@@ -1444,7 +1440,7 @@ button {
   text-align: left;
   background: var(--surface);
   border: 1px solid var(--panel-border);
-  border-radius: 8px;
+  border-radius: 4px;
 }
 
 .neighbor-list button span {
@@ -1452,7 +1448,7 @@ button {
   height: 8px;
   background: var(--neighbor);
   border-radius: 50%;
-  box-shadow: 0 0 12px var(--neighbor);
+  box-shadow: none;
 }
 
 .chat-console {
@@ -1470,11 +1466,11 @@ button {
   width: 54px;
   height: 54px;
   place-items: center;
-  color: #061016;
+  color: var(--accent-ink);
   background: var(--node-color);
   border: 0;
   border-radius: 50%;
-  box-shadow: 0 0 26px color-mix(in srgb, var(--node-color), transparent 40%), 0 18px 50px rgba(0,0,0,.22);
+  box-shadow: none;
 }
 
 .ai-fab.is-full {
@@ -1490,11 +1486,11 @@ button {
   place-items: center;
   padding: 24px;
   background: rgba(0, 0, 0, .34);
-  backdrop-filter: blur(12px);
+  backdrop-filter: none;
 }
 
 .app-shell[data-theme="light"] .chat-modal-backdrop {
-  background: rgba(229, 241, 239, .48);
+  background: rgba(235, 235, 235, .72);
 }
 
 .chat-popover {
@@ -1508,9 +1504,9 @@ button {
   color: var(--text-main);
   background: var(--panel-bg);
   border: 1px solid var(--panel-border);
-  border-radius: 8px;
-  box-shadow: var(--panel-shadow);
-  backdrop-filter: blur(18px);
+  border-radius: 4px;
+  box-shadow: none;
+  backdrop-filter: none;
 }
 
 .chat-popover.is-maximized {
@@ -1563,7 +1559,7 @@ button {
   font-size: 13px;
   line-height: 1.5;
   border: 1px solid var(--panel-border);
-  border-radius: 8px;
+  border-radius: 4px;
 }
 
 .message p,
@@ -1593,9 +1589,9 @@ button {
 .message pre {
   overflow: auto;
   padding: 10px;
-  background: rgba(0, 0, 0, .22);
+  background: var(--field-bg);
   border: 1px solid var(--panel-border);
-  border-radius: 8px;
+  border-radius: 4px;
 }
 
 .message.agent {
@@ -1617,7 +1613,7 @@ button {
   color: #ffd8d8;
   background: rgba(255, 93, 93, .12);
   border: 1px solid rgba(255, 93, 93, .28);
-  border-radius: 8px;
+  border-radius: 4px;
   font-size: 12px;
   line-height: 1.5;
 }
@@ -1641,7 +1637,7 @@ button {
   color: var(--control-text);
   background: var(--surface-strong);
   border: 1px solid var(--panel-border);
-  border-radius: 999px;
+  border-radius: 4px;
   padding: 0 13px;
   font-weight: 800;
 }
@@ -1658,7 +1654,7 @@ button {
   padding: 12px;
   border: 1px solid color-mix(in srgb, var(--node-color), transparent 42%);
   background: color-mix(in srgb, var(--node-color), transparent 91%);
-  border-radius: 8px;
+  border-radius: 4px;
 }
 
 .draft-card p {
@@ -1680,10 +1676,10 @@ button {
   justify-content: center;
   gap: 6px;
   min-height: 34px;
-  color: #051016;
+  color: var(--accent-ink);
   background: var(--node-color);
   border: 0;
-  border-radius: 999px;
+  border-radius: 4px;
   padding: 0 12px;
   font-weight: 700;
 }
@@ -1707,7 +1703,7 @@ button {
   color: var(--text-main);
   background: var(--field-bg);
   border: 1px solid var(--panel-border);
-  border-radius: 999px;
+  border-radius: 4px;
   outline: 0;
   padding: 0 14px;
 }
@@ -1919,7 +1915,7 @@ button {
   color: var(--text-muted);
   background: transparent;
   border: 1px solid var(--panel-border);
-  border-radius: 999px;
+  border-radius: 4px;
   font-size: 12px;
   font-weight: 600;
   transition: background .15s ease, color .15s ease;
@@ -1942,7 +1938,7 @@ button {
   color: var(--text-soft);
   background: var(--surface);
   border: 1px solid var(--panel-border);
-  border-radius: 8px;
+  border-radius: 4px;
   font-size: 12px;
   line-height: 1.5;
 }
@@ -1980,17 +1976,17 @@ button {
 .wiki-current-path strong { color: var(--text-main); }
 .wiki-path-form label { display: block; margin-bottom: 8px; }
 .wiki-path-form > div { display: flex; gap: 8px; }
-.wiki-path-form input { min-width: 0; flex: 1; border: 1px solid var(--panel-border); border-radius: 8px; padding: 10px; background: var(--surface); color: var(--text-main); }
-.wiki-folder-dialog button { cursor: pointer; color: var(--text-main); background: var(--surface); border: 1px solid var(--panel-border); border-radius: 8px; padding: 9px 12px; }
+.wiki-path-form input { min-width: 0; flex: 1; border: 1px solid var(--panel-border); border-radius: 4px; padding: 10px; background: var(--surface); color: var(--text-main); }
+.wiki-folder-dialog button { cursor: pointer; color: var(--text-main); background: var(--surface); border: 1px solid var(--panel-border); border-radius: 4px; padding: 9px 12px; }
 .wiki-folder-dialog button:disabled { opacity: .5; cursor: default; }
-.wiki-folder-dialog button:focus-visible, .wiki-folder-dialog input:focus-visible { outline: 2px solid #34d399; outline-offset: 2px; }
+.wiki-folder-dialog button:focus-visible, .wiki-folder-dialog input:focus-visible { outline: 2px solid var(--accent-text); outline-offset: 2px; }
 .wiki-folder-shortcuts { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0; }
-.wiki-folder-list { min-height: 130px; max-height: 34dvh; overflow-y: auto; border: 1px solid var(--panel-border); border-radius: 10px; padding: 10px; }
+.wiki-folder-list { min-height: 130px; max-height: 34dvh; overflow-y: auto; border: 1px solid var(--panel-border); border-radius: 4px; padding: 10px; }
 .wiki-folder-list > button { display: flex; align-items: center; gap: 10px; width: 100%; text-align: left; margin-top: 5px; }
 .wiki-folder-list > button span { overflow-wrap: anywhere; min-width: 0; }
 .wiki-folder-list > button svg { flex-shrink: 0; }
 .wiki-folder-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 18px; }
-.wiki-folder-actions .wiki-folder-confirm { background: #16f2b3; color: #05251d; font-weight: 700; }
+.wiki-folder-actions .wiki-folder-confirm { background: var(--accent); color: var(--accent-ink); font-weight: 700; }
 @media (max-width: 600px) { .wiki-folder-dialog { padding: 16px; } .wiki-path-form > div { flex-wrap: wrap; } .wiki-path-form input { flex-basis: 100%; } }
 
 
@@ -2010,12 +2006,12 @@ button {
 
 /* Accessibility and responsive interaction defaults. */
 .app-shell :is(button, a, input, select, textarea, [tabindex]):focus-visible {
-  outline: 2px solid #159b86;
+  outline: 2px solid var(--accent-text);
   outline-offset: 3px;
 }
-.app-shell[data-theme="dark"] :is(button, a, input, select, textarea, [tabindex]):focus-visible { outline-color: #5fffd9; }
-:where(button, a, input) { touch-action: manipulation; -webkit-tap-highlight-color: rgba(22, 155, 134, .25); }
-.skip-link { position: absolute; top: 8px; left: 8px; z-index: 100; transform: translateY(-160%); padding: 12px; border-radius: 8px; background: var(--field-bg); color: var(--text-main); }
+.app-shell[data-theme="dark"] :is(button, a, input, select, textarea, [tabindex]):focus-visible { outline-color: var(--accent-text); }
+:where(button, a, input) { touch-action: manipulation; -webkit-tap-highlight-color: rgba(244, 185, 0, .2); }
+.skip-link { position: absolute; top: 8px; left: 8px; z-index: 100; transform: translateY(-160%); padding: 12px; border-radius: 4px; background: var(--field-bg); color: var(--text-main); }
 .skip-link:focus { transform: translateY(0); }
 .password-dialog { max-height: calc(100dvh - 48px); overflow-y: auto; }
 .password-dialog, .node-panel, .chat-popover, .messages, .wiki-folder-list, .category-list { overscroll-behavior: contain; }
@@ -2023,7 +2019,7 @@ button {
 .wiki-folder-list > button { content-visibility: auto; contain-intrinsic-size: auto 40px; }
 .history-count, .time-filter-count, .markdown-body td { font-variant-numeric: tabular-nums; }
 .markdown-body :is(h1, h2, h3, h4) { scroll-margin-top: 24px; }
-.wiki-folder-dialog button:not(:disabled):hover { border-color: #159b86; background: var(--surface-strong); }
+.wiki-folder-dialog button:not(:disabled):hover { border-color: var(--accent-text); background: var(--surface-strong); }
 .login-shell { overflow-y: auto; }
 @media (max-width: 600px) {
   .app-shell input { font-size: 16px; }
@@ -2036,5 +2032,53 @@ button {
 }
 
 .visually-hidden, .graph-node-picker { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
-.graph-node-picker:focus-within { z-index: 120; top: 12px; left: 12px; width: min(360px, calc(100% - 24px)); height: auto; margin: 0; padding: 12px; clip-path: none; white-space: normal; background: var(--field-bg); color: var(--text-main); border: 1px solid var(--panel-border); border-radius: 8px; }
+.graph-node-picker:focus-within { z-index: 120; top: 12px; left: 12px; width: min(360px, calc(100% - 24px)); height: auto; margin: 0; padding: 12px; clip-path: none; white-space: normal; background: var(--field-bg); color: var(--text-main); border: 1px solid var(--panel-border); border-radius: 4px; }
 .graph-node-picker select { display: block; max-width: 100%; margin-top: 8px; padding: 8px; color: var(--text-main); background: var(--field-bg); font: inherit; }
+
+
+/* Hermes frames and amber interaction hierarchy. */
+:root[data-theme="light"] { background: #ffffff; }
+.app-shell::after, .panel-scanline { display: none; }
+.app-shell::before { opacity: .45; mask-image: none; }
+.brand-mark, .legend-dot, .avatar-button, .ai-fab { border-radius: 4px; }
+.brand-mark { border-color: var(--accent-text); }
+.eyebrow, .section-title, .source-asset-title { color: var(--accent-text); letter-spacing: .08em; }
+.login-brand strong, .brand strong { color: var(--text-main); }
+.login-card { border-top: 3px solid var(--accent); }
+.dialog-head, .panel-head, .chat-popover-head { border-bottom: 1px solid var(--panel-border); padding-bottom: 16px; }
+.node-meta span { border-color: var(--panel-border); background: var(--surface); }
+.legend-dot { color: var(--accent-text); opacity: .7; }
+.legend-dot.is-active { border-color: var(--accent-text); background: var(--surface-strong); opacity: 1; }
+.ai-fab { background: var(--accent); color: var(--accent-ink); border: 1px solid var(--accent-text); }
+.icon-button:hover, .theme-button:hover, .restore-button:hover, .login-theme-button:hover { border-color: var(--accent-text); color: var(--accent-text); background: var(--surface-strong); }
+.login-form button:not(:disabled):hover, .wiki-folder-actions .wiki-folder-confirm:not(:disabled):hover { background: #ffd14a; color: #171a12; }
+.markdown-body a, .markdown-body .wikilink { color: var(--accent-text); }
+.markdown-body a:hover { text-decoration: underline; text-underline-offset: 3px; }
+.markdown-body blockquote { border-left-color: var(--accent-text); }
+.neighbor-list button, .source-asset-card { background: var(--surface); border-color: var(--panel-border); }
+.neighbor-list button:hover { border-color: var(--accent-text); }
+.tag-tooltip { border-color: var(--panel-border); }
+
+
+/* Keep graph actions in reading and keyboard order. */
+.topbar-actions { position: absolute; top: 0; right: 0; display: flex; align-items: flex-start; gap: 8px; pointer-events: auto; }
+.topbar-actions > button, .topbar-actions .avatar-button { position: static; width: 44px; height: 44px; flex: 0 0 44px; }
+.topbar-actions .user-menu { position: relative; top: auto; right: auto; }
+.topbar-actions .graph-zoom-controls { display: flex; gap: 8px; }
+.graph-zoom-controls button { display: grid; place-items: center; width: 44px; height: 44px; padding: 0; border: 1px solid var(--panel-border); border-radius: 4px; background: var(--button-bg); color: var(--control-text); }
+.graph-zoom-controls button:not(:disabled):hover { border-color: var(--accent-text); color: var(--accent-text); background: var(--surface-strong); }
+.graph-zoom-controls button:disabled { opacity: .45; cursor: default; }
+@media (min-width: 1121px) and (max-width: 1300px) {
+  .search-box, .time-filter { width: calc(100% - 690px); left: 49%; }
+  .brand { width: 260px; }
+}
+@media (max-width: 600px) {
+  .topbar-actions { gap: 6px; }
+  .topbar-actions .graph-zoom-controls { gap: 6px; }
+}
+@media (max-width: 380px) {
+  .topbar-actions { left: 64px; flex-wrap: wrap; justify-content: flex-end; }
+  .topbar { height: 230px; }
+  .search-box { top: 116px; }
+  .time-filter { top: 174px; }
+}

@@ -1,4 +1,17 @@
 {
-  "6": "auth.mjs",
-  "9": "Web Interface Guidelines"
+  "2": "second-brain-server.mjs",
+  "6": "vendor.js",
+  "9": "Web Interface Guidelines",
+  "15": "build-seo.mjs",
+  "16": "Hermes Web Creator",
+  "17": "app.js",
+  "18": "article.js",
+  "19": "privacy.js",
+  "20": "License information",
+  "21": "phan-duy-thang/content.en.md",
+  "22": "phan-duy-thang/content.vi.md",
+  "23": "page.js",
+  "24": "tai-lieu-iot/content.en.md",
+  "25": "tai-lieu-iot/content.vi.md",
+  "26": "seo.js"
 }
