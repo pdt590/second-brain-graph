@@ -1,14 +1,19 @@
 # Graph Report - second-brain-graph  (2026-10-20)
 
 ## Corpus Check
-- 47 files · ~214,359 words
+- 47 files · ~215,239 words
 - Verdict: corpus is large enough that graph structure adds value.
 - Unclassified: 15 file(s) not represented in the graph (top: (none) 5, .cmd 4, .example 3)
 
 ## Summary
-- 502 nodes · 932 edges · 27 communities (19 shown, 8 thin omitted)
+- 502 nodes · 933 edges · 27 communities (19 shown, 8 thin omitted)
 - Extraction: 97% EXTRACTED · 3% INFERRED · 0% AMBIGUOUS · INFERRED: 32 edges (avg confidence: 0.87)
 - Token cost: 0 input · 0 output
+
+## Graph Freshness
+- Built from commit: `c5f71bd9`
+- Run `git rev-parse HEAD` and compare to check if the graph is stale.
+- Run `graphify update .` after code changes (no API cost).
 
 ## Community Hubs (Navigation)
 - Interactive Graph Interface
@@ -157,7 +162,7 @@ _Questions this graph is uniquely positioned to answer:_
 - **What connects `dompurify`, `Four connected colored nodes`, `Second Brain icon` to the rest of the system?**
   _13 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `Interactive Graph Interface` be split into smaller, more focused modules?**
-  _Cohesion score 0.06896551724137931 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.06957047791893527 - nodes in this community are weakly interconnected._
 - **Why does `vite` connect `Hermes Runtime Configuration` to `Interactive Graph Interface`?**
   _High betweenness centrality (0.059) - this node is a cross-community bridge._
 - **Should `Wiki Asset Indexing` be split into smaller, more focused modules?**

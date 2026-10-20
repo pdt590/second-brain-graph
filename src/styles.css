@@ -512,7 +512,7 @@ button {
 }
 
 .graph-mode-button span {
-  font-size: 12px;
+  font-size: inherit;
   line-height: 1;
 }
 
@@ -1782,7 +1782,7 @@ button {
   }
 
   .graph-mode-button span {
-    font-size: 11px;
+    font-size: inherit;
   }
 
   .theme-button {
@@ -2069,16 +2069,41 @@ button {
 .graph-zoom-controls button:not(:disabled):hover { border-color: var(--accent-text); color: var(--accent-text); background: var(--surface-strong); }
 .graph-zoom-controls button:disabled { opacity: .45; cursor: default; }
 @media (min-width: 1121px) and (max-width: 1300px) {
-  .search-box, .time-filter { width: calc(100% - 690px); left: 49%; }
+  .search-box, .time-filter { width: calc(100% - 794px); left: 49%; }
   .brand { width: 260px; }
 }
 @media (max-width: 600px) {
   .topbar-actions { gap: 6px; }
-  .topbar-actions .graph-zoom-controls { gap: 6px; }
+  .topbar-actions .graph-zoom-controls { display: contents; }
 }
-@media (max-width: 380px) {
+@media (max-width: 600px) {
   .topbar-actions { left: 64px; flex-wrap: wrap; justify-content: flex-end; }
   .topbar { height: 230px; }
   .search-box { top: 116px; }
   .time-filter { top: 174px; }
 }
+
+.graph-zoom-controls button[aria-pressed="true"] { border-color: var(--accent-text); color: var(--accent-text); background: var(--surface-strong); }
+
+/* Date filter disclosure inside search. */
+.search-date-toggle {
+  display: grid;
+  place-items: center;
+  flex: 0 0 44px;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  color: var(--text-muted);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  cursor: pointer;
+}
+.search-date-toggle:hover,
+.search-date-toggle[aria-expanded="true"],
+.search-date-toggle.has-filter {
+  color: var(--accent-text);
+  background: var(--surface-strong);
+  border-color: var(--panel-border);
+}
+.time-filter[hidden] { display: none; }

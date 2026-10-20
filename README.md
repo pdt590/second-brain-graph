@@ -69,7 +69,7 @@ The selected path is saved in `data/wiki-settings.json` under the application st
 
 ### Option 1: Development Environment
 
-Requires **Node.js 18+** and a running **Hermes Agent** instance.
+Requires **Node.js 22.12+ (or 20.19+)** and a running **Hermes Agent** instance.
 
 ```bash
 # 1. Install dependencies
@@ -112,7 +112,7 @@ Data (`auth.json`, chat history) is stored in a named Docker volume and persists
 
 ### Option 3: Nginx + Node.js (Traditional Production)
 
-Requires **Node.js 18+**, **npm**, and **nginx** on the target host. See [DEPLOYMENT.md](DEPLOYMENT.md) for the full guide.
+Requires **Node.js 22.12+ (or 20.19+)**, **npm**, and **nginx** on the target host. See [DEPLOYMENT.md](DEPLOYMENT.md) for the full guide.
 
 ```bash
 # 1. Install dependencies and build frontend
@@ -159,6 +159,108 @@ npm run package:windows-product
 ```
 
 Upload the generated package from `release/` as a GitHub Release artifact; do not commit bundled runtime binaries to the source repository.
+
+## Install and Deploy with PM2 (Linux / VPS)
+
+PM2 keeps the production Node server running and restarts it after a crash. The server serves both `dist/` and `/api/` from one process.
+
+### 1. Install and configure
+
+Install **Node.js 22.12+ (or 20.19+)**, npm, and Git on the host. These Node versions are required by Vite 8. Copy or clone this repository to a permanent application directory, then run the following commands from its root as the user who will run the app:
+
+```bash
+node --version
+npm --version
+npm install -g pm2
+npm ci
+cp .env.example .env
+```
+
+Only copy `.env.example` on the first installation; preserve your existing `.env` during updates. Edit `.env` with values for your host:
+
+```dotenv
+HERMES_WIKI_DIR=/home/your-user/wiki
+HERMES_API_TARGET=http://127.0.0.1:8643
+API_SERVER_KEY=replace-with-your-hermes-api-key
+SECOND_BRAIN_HOST=0.0.0.0
+SECOND_BRAIN_PORT=3030
+SECOND_BRAIN_ADMIN_USER=admin
+SECOND_BRAIN_ADMIN_PASSWORD=replace-with-a-strong-password
+```
+
+Use an existing wiki path readable by the application user. Hermes must be running separately for AI chat, and `API_SERVER_KEY` must match its configuration. The Node server reads `.env` automatically; no shell `source` command is needed. The admin password initializes credentials on first startup; change an existing account's password through the app user menu.
+
+### 2. Build and start
+
+```bash
+npm run build
+pm2 start server/second-brain-server.mjs --name second-brain --cwd "$PWD" --time
+pm2 status
+pm2 logs second-brain --lines 50
+```
+
+Press `Ctrl+C` to leave the log viewer; the app keeps running. PM2 runs a single Node process by default. Use this production server rather than `npm run dev` or `npm run preview`.
+
+Verify from the host in another terminal:
+
+```bash
+curl -i http://127.0.0.1:3030/
+curl -i http://127.0.0.1:3030/api/graph
+```
+
+The homepage should return `200`; `/api/graph` should return `401` until you sign in. If no initial admin password was configured, retrieve the generated password from the PM2 logs.
+
+### 3. Restore after reboot
+
+Run these commands as the same application user:
+
+```bash
+pm2 startup
+# Execute the sudo command printed by PM2 to install the startup service.
+pm2 save
+```
+
+`pm2 startup` prints the host-specific command; run that command before saving the process list. If Node is later upgraded or its installation path changes, regenerate the startup service following the [PM2 startup guide](https://pm2.keymetrics.io/docs/usage/startup/).
+
+### 4. Access the web app
+
+With `SECOND_BRAIN_HOST=0.0.0.0`, the server accepts connections on all IPv4 interfaces. Open `http://<server-ip>:3030` in your browser and sign in with the configured admin account. Both the frontend and API are served directly by the Node process managed by PM2.
+
+Allow inbound TCP traffic on port `3030` in your VPS provider's firewall/security group. On Ubuntu/Debian hosts where UFW is already enabled, allow the port with:
+
+```bash
+sudo ufw allow 3030/tcp
+```
+
+If you choose a different `SECOND_BRAIN_PORT`, use that port in the URL, firewall rule, and verification commands. You can also point a domain's DNS to the host and access `http://<your-domain>:3030`.
+
+Use PM2 as the process manager for this setup. The separate `scripts/deploy-host.sh` flow starts its own Node process; do not run it alongside PM2 on the same port.
+
+### 5. Update and manage
+
+From the same repository directory:
+
+```bash
+git pull
+npm ci
+npm run build
+pm2 restart second-brain --update-env
+pm2 save
+```
+
+Restarting reloads `.env`; `--update-env` also refreshes environment variables inherited from the shell. Shell/PM2 environment variables override `.env` values. A single-process restart briefly interrupts active requests and chat streams. Preserve `.env` and `data/` (credentials, wiki selection, and chat history) across deployments.
+
+```bash
+pm2 status                              # Process status
+pm2 logs second-brain --lines 100        # Recent logs and live output
+pm2 monit                               # CPU and memory usage
+pm2 restart second-brain --update-env    # Restart after configuration changes
+pm2 stop second-brain                    # Stop the app
+pm2 delete second-brain                  # Remove the app from PM2
+pm2 save                                # Persist the current process list
+```
+
+See the [official PM2 documentation](https://pm2.keymetrics.io/docs/usage/quick-start/) for additional process management options.
 
 ## Environment Variables
 

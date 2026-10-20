@@ -1,0 +1,458 @@
+{
+  ".codex/hooks.json": {
+    "mtime": 1792472791.4775438,
+    "seen": 1792489547.4223127,
+    "ast_hash": "005ac71c84af2cae38e255e2b9de2411",
+    "semantic_hash": ""
+  },
+  "package.json": {
+    "mtime": 1792472791.5175452,
+    "seen": 1792489547.4223583,
+    "ast_hash": "5f4b10c0010056d81c387dc38757306c",
+    "semantic_hash": ""
+  },
+  "packaging/windows/Wait-SecondBrain.ps1": {
+    "mtime": 1792472791.5175452,
+    "seen": 1792489547.4223614,
+    "ast_hash": "4d6025fd66125fd8253f24a9aac7f52b",
+    "semantic_hash": ""
+  },
+  "scripts/create-windows-package.sh": {
+    "mtime": 1792472791.5175452,
+    "seen": 1792489547.4223642,
+    "ast_hash": "d4db0fb53ede81a9a9775c6c11c8da24",
+    "semantic_hash": ""
+  },
+  "scripts/create-windows-product-package.mjs": {
+    "mtime": 1792472791.5175452,
+    "seen": 1792489547.4223673,
+    "ast_hash": "5d8566c8f9c643ca176d034dca75a8f7",
+    "semantic_hash": ""
+  },
+  "scripts/deploy-host.sh": {
+    "mtime": 1792472791.5175452,
+    "seen": 1792489547.42237,
+    "ast_hash": "30e7db7e282ffa2bb4955e39dbcc1cd3",
+    "semantic_hash": ""
+  },
+  "scripts/install-wsl.sh": {
+    "mtime": 1792472791.5175452,
+    "seen": 1792489547.4223723,
+    "ast_hash": "6cc0665aef3fe812303fafad40d729c4",
+    "semantic_hash": ""
+  },
+  "scripts/start-product.mjs": {
+    "mtime": 1792472791.5175452,
+    "seen": 1792489547.4223752,
+    "ast_hash": "3bf68e4d3beb9ae96cb898ce97d90545",
+    "semantic_hash": ""
+  },
+  "server/api-routes.mjs": {
+    "mtime": 1792472791.5175452,
+    "seen": 1792489547.4223778,
+    "ast_hash": "39f0e7b5a2b6df97a589485f866ac173",
+    "semantic_hash": ""
+  },
+  "server/auth.mjs": {
+    "mtime": 1792472791.5175452,
+    "seen": 1792489547.42238,
+    "ast_hash": "e41968f9541d28ceed6e5b946d7efadd",
+    "semantic_hash": ""
+  },
+  "server/chat-history.mjs": {
+    "mtime": 1792472791.5175452,
+    "seen": 1792489547.4223824,
+    "ast_hash": "5f0a36e2fcfe95a22b515141c1675239",
+    "semantic_hash": ""
+  },
+  "server/embedded-hermes-manager.mjs": {
+    "mtime": 1792472791.5175452,
+    "seen": 1792489547.4223855,
+    "ast_hash": "c9a8b588d6cf62f0784ee789358a3982",
+    "semantic_hash": ""
+  },
+  "server/runtime-config.mjs": {
+    "mtime": 1792472791.5175452,
+    "seen": 1792489547.4223886,
+    "ast_hash": "1f5d7a4c603d13e08247866cce336ced",
+    "semantic_hash": ""
+  },
+  "server/second-brain-server.mjs": {
+    "mtime": 1792472791.5175452,
+    "seen": 1792489547.422391,
+    "ast_hash": "45dbb1b101ba1a57c0db69426ab0eb24",
+    "semantic_hash": ""
+  },
+  "server/wiki-graph-indexer.mjs": {
+    "mtime": 1792472791.5215454,
+    "seen": 1792489547.4223938,
+    "ast_hash": "edb0c3e8b53d6cfe782597fa4c83560c",
+    "semantic_hash": ""
+  },
+  "server/wiki-graph-indexer.test.mjs": {
+    "mtime": 1792472791.5215454,
+    "seen": 1792489547.4223962,
+    "ast_hash": "e79ba06d73b5f6a34b38c1aca4123068",
+    "semantic_hash": ""
+  },
+  "src/main.jsx": {
+    "mtime": 1792490343.251224,
+    "seen": 1792490376.536854,
+    "ast_hash": "5ba07b17238f82a43b867418936f9bac",
+    "semantic_hash": ""
+  },
+  "vite.config.js": {
+    "mtime": 1792472791.5215454,
+    "seen": 1792489547.4224124,
+    "ast_hash": "0f318b38f282d8c676168f285a0737a1",
+    "semantic_hash": ""
+  },
+  "AGENTS.md": {
+    "mtime": 1792472791.509545,
+    "seen": 1792489547.422464,
+    "ast_hash": "f36539ecc9af68f33ebd72770ce4a19e",
+    "semantic_hash": "f36539ecc9af68f33ebd72770ce4a19e"
+  },
+  "DEPLOYMENT.md": {
+    "mtime": 1792472791.509545,
+    "seen": 1792489547.422467,
+    "ast_hash": "fb7d48ceae0525458a5c2541d487d235",
+    "semantic_hash": ""
+  },
+  "PRODUCT_MODE.md": {
+    "mtime": 1792472791.509545,
+    "seen": 1792489547.4224696,
+    "ast_hash": "bd3a3115516e2365a7bcfadd5df3cbeb",
+    "semantic_hash": ""
+  },
+  "README.md": {
+    "mtime": 1792486611.3820124,
+    "seen": 1792489547.4224725,
+    "ast_hash": "6ce2a493fc243f09148a28f299a3663e",
+    "semantic_hash": ""
+  },
+  "WINDOWS_INSTALL.md": {
+    "mtime": 1792472791.509545,
+    "seen": 1792489547.4224749,
+    "ast_hash": "18236b4f7ee001907e33729d935e0ddd",
+    "semantic_hash": ""
+  },
+  "docker-compose.yml": {
+    "mtime": 1792472791.513545,
+    "seen": 1792489547.422477,
+    "ast_hash": "42ef10a597d9accba69d748c47f7e62f",
+    "semantic_hash": ""
+  },
+  "index.html": {
+    "mtime": 1792472791.5175452,
+    "seen": 1792489547.4224794,
+    "ast_hash": "c7b3d65c13c0994b4ce3b34024839101",
+    "semantic_hash": ""
+  },
+  "packaging/windows/README-WINDOWS-PRODUCT.md": {
+    "mtime": 1792472791.5175452,
+    "seen": 1792489547.422482,
+    "ast_hash": "85ef87d5ee4297e78fa0f93fac9b361c",
+    "semantic_hash": ""
+  },
+  "public/second-brain-icon.svg": {
+    "mtime": 1792472791.5175452,
+    "seen": 1792489547.4225307,
+    "ast_hash": "f6b0a721a84ba5f2301262530ec08647",
+    "semantic_hash": ""
+  },
+  "server/wiki-library.mjs": {
+    "mtime": 1792472791.5215454,
+    "seen": 1792489547.4223995,
+    "ast_hash": "7826f3ee26ec4a0d1daaeeb22950f181",
+    "semantic_hash": ""
+  },
+  "server/wiki-library.test.mjs": {
+    "mtime": 1792472791.5215454,
+    "seen": 1792489547.4224021,
+    "ast_hash": "79dff25969e24397e6978ba5f4675041",
+    "semantic_hash": ""
+  },
+  "src/WikiFolderDialog.jsx": {
+    "mtime": 1792472791.5215454,
+    "seen": 1792489547.4224045,
+    "ast_hash": "8ec5d6334ac1fb84817fc109784db248",
+    "semantic_hash": ""
+  },
+  "src/useModalFocus.js": {
+    "mtime": 1792472791.5215454,
+    "seen": 1792489547.4224098,
+    "ast_hash": "78e3f966ac485abb8c605e8e0433fcde",
+    "semantic_hash": ""
+  },
+  ".codex/skills/web-design-guidelines/SKILL.md": {
+    "mtime": 1792472791.509545,
+    "seen": 1792489547.4224615,
+    "ast_hash": "98087aedd18375666dbb093c859b2949",
+    "semantic_hash": ""
+  },
+  ".codex/skills/hermes-web-creator/assets/frontend-template/app.js": {
+    "mtime": 1792472791.4775438,
+    "seen": 1792489547.4223258,
+    "ast_hash": "f770ecf8832b5b2946f3840db60f9d63",
+    "semantic_hash": ""
+  },
+  ".codex/skills/hermes-web-creator/assets/frontend-template/article.js": {
+    "mtime": 1792472791.4775438,
+    "seen": 1792489547.4223309,
+    "ast_hash": "702fe0a90b1dab507fd939e53d1a623d",
+    "semantic_hash": ""
+  },
+  ".codex/skills/hermes-web-creator/assets/frontend-template/package.json": {
+    "mtime": 1792472791.505545,
+    "seen": 1792489547.4223342,
+    "ast_hash": "2488f3a52fd488eac16ab79444364f93",
+    "semantic_hash": ""
+  },
+  ".codex/skills/hermes-web-creator/assets/frontend-template/page.js": {
+    "mtime": 1792472791.509545,
+    "seen": 1792489547.422337,
+    "ast_hash": "8c261184839a2b33c998acfcd5b32d37",
+    "semantic_hash": ""
+  },
+  ".codex/skills/hermes-web-creator/assets/frontend-template/policy/privacy/privacy.js": {
+    "mtime": 1792472791.509545,
+    "seen": 1792489547.4223397,
+    "ast_hash": "84cf8d80e20ba1e7d32b7783201fcdf6",
+    "semantic_hash": ""
+  },
+  ".codex/skills/hermes-web-creator/assets/frontend-template/scripts/build-seo.mjs": {
+    "mtime": 1792472791.509545,
+    "seen": 1792489547.4223423,
+    "ast_hash": "50680fb690aca884e18cc0df0dafd1db",
+    "semantic_hash": ""
+  },
+  ".codex/skills/hermes-web-creator/assets/frontend-template/seo.js": {
+    "mtime": 1792472791.509545,
+    "seen": 1792489547.422345,
+    "ast_hash": "6279ceeaea20c3ad62d5931b292df793",
+    "semantic_hash": ""
+  },
+  ".codex/skills/hermes-web-creator/assets/frontend-template/server.cjs": {
+    "mtime": 1792472791.509545,
+    "seen": 1792489547.4223473,
+    "ast_hash": "8e85ee2583c56862fbfab369146d4f8c",
+    "semantic_hash": ""
+  },
+  ".codex/skills/hermes-web-creator/assets/frontend-template/vendor.js": {
+    "mtime": 1792472791.509545,
+    "seen": 1792489547.422351,
+    "ast_hash": "5277fc3bad773eafda8a365cae3db738",
+    "semantic_hash": ""
+  },
+  ".codex/skills/hermes-web-creator/scripts/create-site.mjs": {
+    "mtime": 1792472791.509545,
+    "seen": 1792489547.4223537,
+    "ast_hash": "e1dc057d2a35511e1c8109754a5b9cb6",
+    "semantic_hash": ""
+  },
+  ".codex/skills/hermes-web-creator/SKILL.md": {
+    "mtime": 1792472791.4775438,
+    "seen": 1792489547.422415,
+    "ast_hash": "e10ab8c7cdbb5847e9c3b114df3c644e",
+    "semantic_hash": ""
+  },
+  ".codex/skills/hermes-web-creator/agents/openai.yaml": {
+    "mtime": 1792472791.4775438,
+    "seen": 1792489547.4224179,
+    "ast_hash": "70967e04a54dcbc3cb28fcf5db561396",
+    "semantic_hash": ""
+  },
+  ".codex/skills/hermes-web-creator/assets/frontend-template/THIRD_PARTY_LICENSES.md": {
+    "mtime": 1792472791.4775438,
+    "seen": 1792489547.4224205,
+    "ast_hash": "248e0e563b32d75848ae1639c798e476",
+    "semantic_hash": ""
+  },
+  ".codex/skills/hermes-web-creator/assets/frontend-template/blog/index.html": {
+    "mtime": 1792472791.4775438,
+    "seen": 1792489547.4224231,
+    "ast_hash": "acf5835706cfb327f05ce594c53c0f49",
+    "semantic_hash": ""
+  },
+  ".codex/skills/hermes-web-creator/assets/frontend-template/blog/tai-lieu-iot/content.en.md": {
+    "mtime": 1792472791.4775438,
+    "seen": 1792489547.4224253,
+    "ast_hash": "174ac88447da2d90977b952b65cad01e",
+    "semantic_hash": ""
+  },
+  ".codex/skills/hermes-web-creator/assets/frontend-template/blog/tai-lieu-iot/content.vi.md": {
+    "mtime": 1792472791.4775438,
+    "seen": 1792489547.4224284,
+    "ast_hash": "8e0c85415d40ce4d7d7fcebb1c45bf01",
+    "semantic_hash": ""
+  },
+  ".codex/skills/hermes-web-creator/assets/frontend-template/blog/tai-lieu-iot/index.html": {
+    "mtime": 1792472791.4855442,
+    "seen": 1792489547.4224317,
+    "ast_hash": "2b091238a4cd0c1d5c3c1ae0d48b9e79",
+    "semantic_hash": ""
+  },
+  ".codex/skills/hermes-web-creator/assets/frontend-template/index.html": {
+    "mtime": 1792472791.4855442,
+    "seen": 1792489547.4224343,
+    "ast_hash": "b6fdf6a14e0638b2bf242957bd8427aa",
+    "semantic_hash": ""
+  },
+  ".codex/skills/hermes-web-creator/assets/frontend-template/member/index.html": {
+    "mtime": 1792472791.505545,
+    "seen": 1792489547.422437,
+    "ast_hash": "0984b0a79281f289fd3641ef40b51693",
+    "semantic_hash": ""
+  },
+  ".codex/skills/hermes-web-creator/assets/frontend-template/member/phan-duy-thang/content.en.md": {
+    "mtime": 1792472791.505545,
+    "seen": 1792489547.42244,
+    "ast_hash": "247e32ac90fc11ef971e531a5dbfff66",
+    "semantic_hash": ""
+  },
+  ".codex/skills/hermes-web-creator/assets/frontend-template/member/phan-duy-thang/content.vi.md": {
+    "mtime": 1792472791.505545,
+    "seen": 1792489547.4224424,
+    "ast_hash": "c3448d051c1537773c486ef12d7cfb29",
+    "semantic_hash": ""
+  },
+  ".codex/skills/hermes-web-creator/assets/frontend-template/member/phan-duy-thang/index.html": {
+    "mtime": 1792472791.505545,
+    "seen": 1792489547.422445,
+    "ast_hash": "6bc6f86f9f7383d10e51958c51395235",
+    "semantic_hash": ""
+  },
+  ".codex/skills/hermes-web-creator/assets/frontend-template/policy/index.html": {
+    "mtime": 1792472791.509545,
+    "seen": 1792489547.4224474,
+    "ast_hash": "51c946cc9f858a6b782b1c347477c134",
+    "semantic_hash": ""
+  },
+  ".codex/skills/hermes-web-creator/assets/frontend-template/policy/privacy/index.html": {
+    "mtime": 1792472791.509545,
+    "seen": 1792489547.4224505,
+    "ast_hash": "e4105f5b940cb0f024ea3dca67211c80",
+    "semantic_hash": ""
+  },
+  ".codex/skills/hermes-web-creator/assets/frontend-template/project/index.html": {
+    "mtime": 1792472791.509545,
+    "seen": 1792489547.4224534,
+    "ast_hash": "ee288ee1aaec05664b04cf4ee48f28e4",
+    "semantic_hash": ""
+  },
+  ".codex/skills/hermes-web-creator/references/design-system.md": {
+    "mtime": 1792472791.509545,
+    "seen": 1792489547.422456,
+    "ast_hash": "164ca029d732ce40fea373e44ed68c19",
+    "semantic_hash": ""
+  },
+  ".codex/skills/hermes-web-creator/references/site-structure.md": {
+    "mtime": 1792472791.509545,
+    "seen": 1792489547.422459,
+    "ast_hash": "3633da267712b1f3b8e1dca15c8a2c69",
+    "semantic_hash": ""
+  },
+  ".codex/skills/hermes-web-creator/assets/frontend-template/blog/tai-lieu-iot/images/cover.png": {
+    "mtime": 1792472791.4855442,
+    "seen": 1792489547.4224844,
+    "ast_hash": "ada970191d3d172a77c6093a408062e4",
+    "semantic_hash": ""
+  },
+  ".codex/skills/hermes-web-creator/assets/frontend-template/blog/tai-lieu-iot/images/cover.webp": {
+    "mtime": 1792472791.4855442,
+    "seen": 1792489547.4224868,
+    "ast_hash": "a9af718ffde94f1f51487fa0601a7e6a",
+    "semantic_hash": ""
+  },
+  ".codex/skills/hermes-web-creator/assets/frontend-template/logo/logo-black.png": {
+    "mtime": 1792472791.4975445,
+    "seen": 1792489547.4224896,
+    "ast_hash": "3ea95f7b554ba9676a7c4445c00ad430",
+    "semantic_hash": ""
+  },
+  ".codex/skills/hermes-web-creator/assets/frontend-template/logo/logo-black.webp": {
+    "mtime": 1792472791.4975445,
+    "seen": 1792489547.4224925,
+    "ast_hash": "57402e8b649c80b081ad54453d632312",
+    "semantic_hash": ""
+  },
+  ".codex/skills/hermes-web-creator/assets/frontend-template/logo/logo-light.png": {
+    "mtime": 1792472791.5015447,
+    "seen": 1792489547.4224956,
+    "ast_hash": "fc8c9bb248ab6327623a80f050df14d2",
+    "semantic_hash": ""
+  },
+  ".codex/skills/hermes-web-creator/assets/frontend-template/logo/logo-light.webp": {
+    "mtime": 1792472791.5015447,
+    "seen": 1792489547.422498,
+    "ast_hash": "f5f4b796c48502bb1c2924a8584fdea1",
+    "semantic_hash": ""
+  },
+  ".codex/skills/hermes-web-creator/assets/frontend-template/logo/partners/cmc.png": {
+    "mtime": 1792472791.5015447,
+    "seen": 1792489547.4225004,
+    "ast_hash": "b785403947ac6ccf3f796e216c552fd2",
+    "semantic_hash": ""
+  },
+  ".codex/skills/hermes-web-creator/assets/frontend-template/logo/partners/cmc.webp": {
+    "mtime": 1792472791.505545,
+    "seen": 1792489547.4225028,
+    "ast_hash": "ae4e3927d4f9c9c666a31ca08ac7b1e1",
+    "semantic_hash": ""
+  },
+  ".codex/skills/hermes-web-creator/assets/frontend-template/logo/partners/fpt.svg": {
+    "mtime": 1792472791.505545,
+    "seen": 1792489547.4225054,
+    "ast_hash": "075c62af420a9ac6f1ebe30efc7b1b19",
+    "semantic_hash": ""
+  },
+  ".codex/skills/hermes-web-creator/assets/frontend-template/logo/partners/honda.png": {
+    "mtime": 1792472791.505545,
+    "seen": 1792489547.4225085,
+    "ast_hash": "ab5f46da3586b87f64662eca9fe86a18",
+    "semantic_hash": ""
+  },
+  ".codex/skills/hermes-web-creator/assets/frontend-template/logo/partners/honda.webp": {
+    "mtime": 1792472791.505545,
+    "seen": 1792489547.4225113,
+    "ast_hash": "3f4a1ff48826d8958d8f535e54e83bf3",
+    "semantic_hash": ""
+  },
+  ".codex/skills/hermes-web-creator/assets/frontend-template/logo/partners/mindx.png": {
+    "mtime": 1792472791.505545,
+    "seen": 1792489547.422514,
+    "ast_hash": "a56329f8bf206c0aa5f45d00c772b415",
+    "semantic_hash": ""
+  },
+  ".codex/skills/hermes-web-creator/assets/frontend-template/logo/partners/mindx.webp": {
+    "mtime": 1792472791.505545,
+    "seen": 1792489547.4225166,
+    "ast_hash": "ab1ffcec525c35cfcf69d99e9ac98fd5",
+    "semantic_hash": ""
+  },
+  ".codex/skills/hermes-web-creator/assets/frontend-template/logo/partners/rangdong.png": {
+    "mtime": 1792472791.505545,
+    "seen": 1792489547.422519,
+    "ast_hash": "23bc7ed6650c12c3d5ab2cdfdb12abf8",
+    "semantic_hash": ""
+  },
+  ".codex/skills/hermes-web-creator/assets/frontend-template/logo/partners/rangdong.webp": {
+    "mtime": 1792472791.505545,
+    "seen": 1792489547.422522,
+    "ast_hash": "7db07ba260a2b0f4a166b9feb19c084c",
+    "semantic_hash": ""
+  },
+  ".codex/skills/hermes-web-creator/assets/frontend-template/member/phan-duy-thang/images/avatar.jpg": {
+    "mtime": 1792472791.505545,
+    "seen": 1792489547.4225247,
+    "ast_hash": "ae15a71816967b85183a0b6b6e49ae9f",
+    "semantic_hash": ""
+  },
+  ".codex/skills/hermes-web-creator/assets/frontend-template/member/phan-duy-thang/images/avatar.webp": {
+    "mtime": 1792472791.505545,
+    "seen": 1792489547.4225273,
+    "ast_hash": "c12d86290f32888d8cac5c48611f4a5c",
+    "semantic_hash": ""
+  }
+}

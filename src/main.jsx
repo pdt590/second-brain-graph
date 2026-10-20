@@ -17,6 +17,8 @@ import {
   MessageCircle,
   Moon,
   Network,
+  Pause,
+  Play,
   RotateCcw,
   Search,
   Send,
@@ -36,7 +38,7 @@ const categoryPaletteLight = ['#886300', '#946b26', '#6a6837', '#56622c', '#8c70
 const HERMES_CHAT_COMPLETIONS_URL = '/api/hermes/v1/chat/completions';
 const HERMES_MODEL = 'hermes-agent';
 const GRAPH_MODES = { TWO_D: '2d', THREE_D: '3d' };
-const GRAPH_3D_CAMERA = { minDistance: 260, maxDistance: 980, padding: 1.28 };
+const GRAPH_3D_CAMERA = { minDistance: 80, viewportFill: 0.88 };
 const EMPTY_GRAPH = { nodes: [], links: [] };
 const nodeSpriteMaterialCache = new Map();
 
@@ -176,10 +178,22 @@ function fitGraphView(graphInstance, graphData, mode, duration = 850) {
     return;
   }
 
-  const { center, span } = getRobustGraphCenterAndSpan(nodes);
-  const distance = Math.min(
-    GRAPH_3D_CAMERA.maxDistance,
-    Math.max(GRAPH_3D_CAMERA.minDistance, span * GRAPH_3D_CAMERA.padding)
+  const { center } = getRobustGraphCenterAndSpan(nodes);
+  const camera = graphInstance.camera?.();
+  const aspect = camera?.aspect || 1;
+  const halfFov = Math.tan(((camera?.fov || 50) * Math.PI) / 360);
+  const visibleHeight = halfFov * GRAPH_3D_CAMERA.viewportFill;
+  // Account for perspective depth and the largest node sprite (30 units).
+  // Fit the main cluster tightly while allowing a few distant outliers.
+  const distances = nodes.map((node) => (node.z - center.z) + Math.max(
+    (Math.abs(node.y - center.y) + 15) / visibleHeight,
+    (Math.abs(node.x - center.x) + 15) / (visibleHeight * aspect)
+  )).sort((a, b) => a - b);
+  const nearestNode = Math.max(...nodes.map((node) => node.z - center.z));
+  const distance = Math.max(
+    GRAPH_3D_CAMERA.minDistance,
+    getPercentile(distances, 0.96),
+    nearestNode + 30
   );
   graphInstance.cameraPosition?.(
     { x: center.x, y: center.y, z: center.z + distance },
@@ -344,6 +358,7 @@ function App() {
   const graphRuntimeRef = useRef({ mode: null, three: null });
   const didInitialFitRef = useRef(false);
   const [graphReady, setGraphReady] = useState(false);
+  const [isGraphMoving, setIsGraphMoving] = useState(false);
   const [graphMode, setGraphMode] = useState(GRAPH_MODES.THREE_D);
   const [graphNotice, setGraphNotice] = useState('');
   const [theme, setTheme] = useState(() => {
@@ -387,6 +402,7 @@ function App() {
   const [isCategoryPanelOpen, setIsCategoryPanelOpen] = useState(false);
   const [categoryQuery, setCategoryQuery] = useState('');
   const [dateRange, setDateRange] = useState({ start: '', end: '' });
+  const [isDateFilterOpen, setIsDateFilterOpen] = useState(false);
   const [quickCategoryLimit, setQuickCategoryLimit] = useState(() => getQuickCategoryLimit());
   const [isFull, setIsFull] = useState(false);
   const [isPanelOpen, setIsPanelOpen] = useState(false);
@@ -782,7 +798,8 @@ function App() {
             .showNavInfo(false)
             .enableNavigationControls(true)
             .enableNodeDrag(true)
-            .cooldownTicks(90)
+            .warmupTicks(90)
+            .cooldownTicks(0)
             .d3AlphaDecay(0.024)
             .d3VelocityDecay(0.26)
             .nodeRelSize(4)
@@ -809,7 +826,8 @@ function App() {
           graphRuntimeRef.current = { mode: graphMode, three: null };
           graphInstance = new ForceGraph2D(host)
             .backgroundColor('rgba(0,0,0,0)')
-            .cooldownTicks(80)
+            .warmupTicks(80)
+            .cooldownTicks(0)
             .d3AlphaDecay(0.018)
             .d3VelocityDecay(0.22)
             .nodeRelSize(6)
@@ -869,12 +887,12 @@ function App() {
     if (!graphReady || !graphInstance) return;
 
     const selectedNodeId = selectedNode?.id;
+    if (graphInstance.graphData() !== filteredGraph) graphInstance.graphData(filteredGraph);
 
     if (graphMode === GRAPH_MODES.THREE_D) {
       const threeModule = graphRuntimeRef.current.three;
       if (!threeModule) return;
       graphInstance
-        .graphData(filteredGraph)
         .nodeThreeObject((node) => createNodeSprite(node, selectedNodeId, neighborsById, threeModule, theme))
         .nodeThreeObjectExtend(false)
         .nodeOpacity(0.92)
@@ -883,13 +901,11 @@ function App() {
           : (theme === 'dark' ? 'rgba(167, 165, 143, .24)' : 'rgba(98, 98, 98, .24)'))
         .linkWidth((link) => linkTouchesNode(link, selectedNodeId) ? 1.8 : 0.55)
         .linkOpacity(0.72)
-        .linkDirectionalParticles((link) => linkTouchesNode(link, selectedNodeId) ? 1 : 0)
         .linkDirectionalParticleWidth(1.25)
         .linkDirectionalParticleSpeed(0.0025)
         .onNodeClick(focusNode);
     } else {
       graphInstance
-        .graphData(filteredGraph)
         .linkColor(() => theme === 'dark' ? 'rgba(167, 165, 143, .3)' : 'rgba(98, 98, 98, .3)')
         .linkWidth((link) => linkTouchesNode(link, selectedNodeId) ? 2.4 : 0.8)
         .nodeCanvasObject((node, ctx) => {
@@ -921,7 +937,6 @@ function App() {
 
     if (!didInitialFitRef.current && filteredGraph.nodes.length) {
       didInitialFitRef.current = true;
-      if (graphMode === GRAPH_MODES.THREE_D) return;
       graphInstance.onEngineStop(() => {
         fitGraphView(graphInstance, filteredGraph, graphMode, 900);
         graphInstance.onEngineStop(() => {});
@@ -929,6 +944,22 @@ function App() {
       window.setTimeout(() => fitGraphView(graphInstance, filteredGraph, graphMode, 900), 650);
     }
   }, [filteredGraph, focusNode, graphMode, graphReady, neighborsById, selectedNode, theme]);
+
+  useEffect(() => {
+    const instance = fgRef.current;
+    if (!graphReady || !instance) return;
+
+    // Freeze the layout engine, not the renderer: picking, dragging and zoom
+    // must remain available while automatic movement is off.
+    instance
+      .cooldownTicks(isGraphMoving ? Infinity : 0)
+      .cooldownTime(Infinity)
+      .d3AlphaDecay(isGraphMoving ? 0 : (graphMode === GRAPH_MODES.THREE_D ? 0.024 : 0.018));
+    if (graphMode === GRAPH_MODES.THREE_D) {
+      instance.linkDirectionalParticles((link) => isGraphMoving && linkTouchesNode(link, selectedNode?.id) ? 1 : 0);
+    }
+    if (isGraphMoving) instance.d3ReheatSimulation();
+  }, [isGraphMoving, graphReady, graphMode, filteredGraph, selectedNode]);
 
   const getNodeChatContext = async (targetNode) => {
     if (!targetNode) return '';
@@ -1157,8 +1188,20 @@ function App() {
               <X aria-hidden="true" size={15} />
             </button>
           )}
+          <button
+            type="button"
+            className={`search-date-toggle${dateRange.start || dateRange.end ? ' has-filter' : ''}`}
+            onClick={() => setIsDateFilterOpen((open) => !open)}
+            aria-label={isDateFilterOpen ? 'Hide date filter' : 'Show date filter'}
+            aria-expanded={isDateFilterOpen}
+            aria-controls="date-filter"
+            title={`${isDateFilterOpen ? 'Hide' : 'Show'} date filter${dateRange.start || dateRange.end ? ' (filter active)' : ''}`}
+          >
+            <CalendarDays aria-hidden="true" size={18} />
+            {(dateRange.start || dateRange.end) && <span className="visually-hidden">Date filter active</span>}
+          </button>
         </div>
-        <div className="time-filter" aria-label="Date filter">
+        <div id="date-filter" className="time-filter" aria-label="Date filter" hidden={!isDateFilterOpen}>
           <CalendarDays aria-hidden="true" size={17} aria-hidden="true" />
           <label>
             <span>Start</span>
@@ -1200,13 +1243,22 @@ function App() {
           aria-label={graphMode === GRAPH_MODES.THREE_D ? 'Switch to 2D graph' : 'Switch to 3D graph'}
           title={graphMode === GRAPH_MODES.THREE_D ? 'Switch to 2D graph' : 'Switch to 3D graph'}
         >
-          <Network aria-hidden="true" size={18} />
           <span>{graphMode === GRAPH_MODES.THREE_D ? '3D' : '2D'}</span>
         </button>
         <button className="theme-button" onClick={toggleTheme} aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}>
           {theme === 'dark' ? <Sun aria-hidden="true" size={18} /> : <Moon aria-hidden="true" size={18} />}
         </button>
-      <div className="graph-zoom-controls" role="group" aria-label="Graph zoom">
+      <div className="graph-zoom-controls" role="group" aria-label="Graph movement and zoom">
+        <button
+          type="button"
+          onClick={() => setIsGraphMoving((moving) => !moving)}
+          disabled={!graphReady || !filteredGraph.nodes.length}
+          aria-pressed={isGraphMoving}
+          aria-label={isGraphMoving ? 'Disable automatic movement' : 'Enable automatic movement'}
+          title={isGraphMoving ? 'Disable automatic movement' : 'Enable automatic movement'}
+        >
+          {isGraphMoving ? <Pause aria-hidden="true" size={20} /> : <Play aria-hidden="true" size={20} />}
+        </button>
         <button type="button" onClick={() => zoomGraph(1)} disabled={!graphReady || !filteredGraph.nodes.length} aria-label="Zoom in" title="Zoom in (+)">
           <ZoomIn aria-hidden="true" size={20} />
         </button>
